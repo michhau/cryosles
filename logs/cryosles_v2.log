@@ -1,0 +1,198 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 2.03kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/ubuntu:24.10
+#2 DONE 0.4s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [ 1/12] FROM docker.io/library/ubuntu:24.10@sha256:102bc1874fdb136fc2d218473f03cf84135cb7496fefdb9c026c0f553cfe1b6d
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 5.62kB done
+#5 DONE 0.0s
+
+#6 [ 8/12] RUN mkdir -p /home/cryosles
+#6 CACHED
+
+#7 [ 3/12] RUN apt-get install -y cmake pkg-config build-essential wget vim
+#7 CACHED
+
+#8 [ 5/12] RUN mkdir -p /home/copied_stuff
+#8 CACHED
+
+#9 [ 7/12] COPY ./model/ /home/copied_stuff
+#9 CACHED
+
+#10 [ 6/12] COPY ./libs/ /home/copied_stuff/
+#10 CACHED
+
+#11 [ 2/12] RUN apt-get -y update && apt-get install -y apt-utils
+#11 CACHED
+
+#12 [ 4/12] WORKDIR /home
+#12 CACHED
+
+#13 [ 9/12] WORKDIR /home/cryosles
+#13 CACHED
+
+#14 [10/12] RUN cp -r /home/copied_stuff/intel . && sh ./intel/intel-oneapi-hpc-toolkit-2025.0.1.47_offline.sh -a --silent --cli --eula accept && sh ./intel/intel-oneapi-base-toolkit-2025.0.1.46_offline.sh -a --silent --cli --eula accept && rm -r intel/
+#14 3.657 Extract intel-oneapi-hpc-toolkit-2025.0.1.47_offline to /home/cryosles/intel-oneapi-hpc-toolkit-2025.0.1.47_offline...
+#14 3.658 tput: No value for $TERM and no -T specified
+#14 3.659 []
+#14 12.31 Extract intel-oneapi-hpc-toolkit-2025.0.1.47_offline completed!
+#14 12.38 Checking system requirements...
+#14 12.39 Done.
+#14 12.39 Wait while the installer is preparing...
+#14 14.02 Done.
+#14 14.02 Launching the installer...
+#14 14.33 NSS package is not installed
+#14 14.33 Intel® VTune(TM) Profiler requires NSS library for graphical user interface, it can be installed with
+#14 14.33 sudo apt-get install libnss3 on Ubuntu / Debian
+#14 14.33 sudo zypper install mozilla-nss on SUSE
+#14 14.33 sudo dnf install nss on CentOS / RHEL / Fedora
+#14 14.33 DRM package is not installed
+#14 14.33 Intel® VTune(TM) Profiler requires DRM library for graphical user interface, it can be installed with
+#14 14.33 sudo apt-get install libdrm2 on Ubuntu / Debian
+#14 14.33 sudo zypper install libdrm2 on SUSE
+#14 14.33 sudo dnf install libdrm on CentOS / RHEL / Fedora
+#14 14.33 Libnotify package is not installed
+#14 14.33 Intel® VTune(TM) Profiler requires Libnotify library for graphical user interface, it can be installed with
+#14 14.33 sudo apt-get install libnotify4 on Ubuntu / Debian
+#14 14.33 sudo zypper install libnotify4 on SUSE
+#14 14.33 sudo dnf install libnotify on CentOS / RHEL / Fedora
+#14 14.33 XCB package is not installed
+#14 14.33 Intel® VTune(TM) Profiler requires XCB library for graphical user interface, it can be installed with
+#14 14.33 sudo apt-get install libxcb-dri3-0 on Ubuntu / Debian
+#14 14.33 sudo zypper install libxcb1 on SUSE
+#14 14.33 sudo dnf install libxcb on CentOS / RHEL / Fedora
+#14 14.33 GTK3 package is not installed
+#14 14.33 Intel® VTune(TM) Profiler requires GTK3 library for graphical user interface, it can be installed with
+#14 14.33 sudo apt-get install libgtk-3-0 on Ubuntu / Debian
+#14 14.33 sudo zypper install libgtk-3-0 on SUSE
+#14 14.33 sudo dnf install gtk3 on CentOS / RHEL / Fedora
+#14 14.33 GLib2 package is not installed
+#14 14.33 Intel® VTune(TM) Profiler requires GLib2 library for graphical user interface, it can be installed with
+#14 14.33 sudo apt-get install libglib2.0-bin on Ubuntu / Debian
+#14 14.33 sudo zypper install libglib-2_0-0 on SUSE
+#14 14.33 sudo dnf install glib2 on CentOS / RHEL / Fedora
+#14 14.33 GBM package is not installed
+#14 14.33 Intel® VTune(TM) Profiler requires GBM library for graphical user interface, it can be installed with
+#14 14.33 sudo apt-get install libgbm1 on Ubuntu / Debian
+#14 14.33 sudo zypper install libgbm1 on SUSE
+#14 14.33 sudo dnf install mesa-libgbm on CentOS / RHEL / Fedora
+#14 14.33 XDG Utils package is not installed
+#14 14.33 Intel® VTune(TM) Profiler requires XDG Utils for graphical user interface, it can be installed with
+#14 14.33 sudo apt-get install xdg-utils on Ubuntu / Debian
+#14 14.33 sudo zypper install xdg-utils on SUSE
+#14 14.33 sudo dnf install xdg-utils on CentOS / RHEL / Fedora
+#14 14.33 AT-SPI2 package is not installed
+#14 14.33 Intel® VTune(TM) Profiler requires AT-SPI2 for graphical user interface, it can be installed with
+#14 14.33 sudo apt-get install libatspi2.0-0 on Ubuntu / Debian
+#14 14.33 sudo zypper install at-spi2-core on SUSE
+#14 14.33 sudo dnf install at-spi2-core on CentOS / RHEL / Fedora
+#14 14.39 Start installation flow...
+#14 125.1 Installed Location: /opt/intel/oneapi
+#14 127.0 Log files: /tmp/unknown_user/intel_oneapi_installer/2025.03.04.13.06.44.924
+#14 128.2 Installation has successfully completed
+#14 128.3 Remove extracted files: /home/cryosles/intel-oneapi-hpc-toolkit-2025.0.1.47_offline...
+#14 130.7 Extract intel-oneapi-base-toolkit-2025.0.1.46_offline to /home/cryosles/intel-oneapi-base-toolkit-2025.0.1.46_offline...
+#14 130.7 tput: No value for $TERM and no -T specified
+#14 130.7 []
+#14 139.2 Extract intel-oneapi-base-toolkit-2025.0.1.46_offline completed!
+#14 139.3 Checking system requirements...
+#14 139.3 Done.
+#14 139.3 Wait while the installer is preparing...
+#14 139.5 Done.
+#14 139.5 Launching the installer...
+#14 139.9 NSS package is not installed
+#14 139.9 Intel® Advisor requires NSS for its standalone GUI client, it can be installed with
+#14 139.9 sudo apt-get install libnss3 on Ubuntu / Debian
+#14 139.9 sudo zypper install mozilla-nss on SUSE
+#14 139.9 sudo dnf install nss on CentOS / RHEL / Fedora.
+#14 139.9 XDG Utils package is not installed
+#14 139.9 Intel® VTune(TM) Profiler requires XDG Utils for graphical user interface, it can be installed with
+#14 139.9 sudo apt-get install xdg-utils on Ubuntu / Debian
+#14 139.9 sudo zypper install xdg-utils on SUSE
+#14 139.9 sudo dnf install xdg-utils on CentOS / RHEL / Fedora
+#14 139.9 XCB package is not installed
+#14 139.9 Intel® VTune(TM) Profiler requires XCB library for graphical user interface, it can be installed with
+#14 139.9 sudo apt-get install libxcb-dri3-0 on Ubuntu / Debian
+#14 139.9 sudo zypper install libxcb1 on SUSE
+#14 139.9 sudo dnf install libxcb on CentOS / RHEL / Fedora
+#14 139.9 GBM package is not installed
+#14 139.9 Intel® VTune(TM) Profiler requires GBM library for graphical user interface, it can be installed with
+#14 139.9 sudo apt-get install libgbm1 on Ubuntu / Debian
+#14 139.9 sudo zypper install libgbm1 on SUSE
+#14 139.9 sudo dnf install mesa-libgbm on CentOS / RHEL / Fedora
+#14 139.9 DRM package is not installed
+#14 139.9 Intel® VTune(TM) Profiler requires DRM library for graphical user interface, it can be installed with
+#14 139.9 sudo apt-get install libdrm2 on Ubuntu / Debian
+#14 139.9 sudo zypper install libdrm2 on SUSE
+#14 139.9 sudo dnf install libdrm on CentOS / RHEL / Fedora
+#14 139.9 GTK3 package is not installed
+#14 139.9 Intel® VTune(TM) Profiler requires GTK3 library for graphical user interface, it can be installed with
+#14 139.9 sudo apt-get install libgtk-3-0 on Ubuntu / Debian
+#14 139.9 sudo zypper install libgtk-3-0 on SUSE
+#14 139.9 sudo dnf install gtk3 on CentOS / RHEL / Fedora
+#14 139.9 Libnotify package is not installed
+#14 139.9 Intel® VTune(TM) Profiler requires Libnotify library for graphical user interface, it can be installed with
+#14 139.9 sudo apt-get install libnotify4 on Ubuntu / Debian
+#14 139.9 sudo zypper install libnotify4 on SUSE
+#14 139.9 sudo dnf install libnotify on CentOS / RHEL / Fedora
+#14 139.9 AT-SPI2 package is not installed
+#14 139.9 Intel® VTune(TM) Profiler requires AT-SPI2 for graphical user interface, it can be installed with
+#14 139.9 sudo apt-get install libatspi2.0-0 on Ubuntu / Debian
+#14 139.9 sudo zypper install at-spi2-core on SUSE
+#14 139.9 sudo dnf install at-spi2-core on CentOS / RHEL / Fedora
+#14 139.9 GLib2 package is not installed
+#14 139.9 Intel® VTune(TM) Profiler requires GLib2 library for graphical user interface, it can be installed with
+#14 139.9 sudo apt-get install libglib2.0-bin on Ubuntu / Debian
+#14 139.9 sudo zypper install libglib-2_0-0 on SUSE
+#14 139.9 sudo dnf install glib2 on CentOS / RHEL / Fedora
+#14 139.9 Start installation flow...
+#14 146.0 Installed Location: /opt/intel/oneapi
+#14 146.9 Log files: /tmp/unknown_user/intel_oneapi_installer/2025.03.04.13.08.51.810
+#14 147.9 Installation has successfully completed
+#14 147.9 Remove extracted files: /home/cryosles/intel-oneapi-base-toolkit-2025.0.1.46_offline...
+#14 DONE 148.5s
+
+#15 [11/12] RUN cp -r /home/copied_stuff/les-lsm-large_domain/* /home/cryosles
+#15 DONE 0.3s
+
+#16 [12/12] RUN apt install -y makedepf90
+#16 0.220 
+#16 0.220 WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+#16 0.220 
+#16 0.246 Reading package lists...
+#16 0.589 Building dependency tree...
+#16 0.644 Reading state information...
+#16 0.789 Installing:
+#16 0.789   makedepf90
+#16 0.789 
+#16 0.997 Summary:
+#16 0.997   Upgrading: 0, Installing: 1, Removing: 0, Not Upgrading: 12
+#16 0.997   Download size: 31.4 kB
+#16 0.997   Space needed: 73.7 kB / 1256 GB available
+#16 0.997 
+#16 0.997 Get:1 http://archive.ubuntu.com/ubuntu oracular/universe amd64 makedepf90 amd64 3.0.1-1 [31.4 kB]
+#16 1.525 Fetched 31.4 kB in 0s (124 kB/s)
+#16 1.567 Selecting previously unselected package makedepf90.
+#16 1.567 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 21202 files and directories currently installed.)
+#16 1.584 Preparing to unpack .../makedepf90_3.0.1-1_amd64.deb ...
+#16 1.595 Unpacking makedepf90 (3.0.1-1) ...
+#16 1.708 Setting up makedepf90 (3.0.1-1) ...
+#16 DONE 1.8s
+
+#17 exporting to image
+#17 exporting layers
+#17 exporting layers 28.9s done
+#17 writing image sha256:1d3278315a13a1a6632d2e30fcab9246c6937c9f735bb99026f3225e020c7cb0 done
+#17 naming to docker.io/library/cryosles:v2 0.0s done
+#17 DONE 29.0s

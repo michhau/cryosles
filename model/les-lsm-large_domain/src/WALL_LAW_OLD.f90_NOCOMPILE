@@ -1,0 +1,962 @@
+MODULE MWALL_LAW
+
+USE SERVICE
+USE TYPES,ONLY:RPREC
+USE PARAM
+
+IMPLICIT NONE
+
+!LOCAL VARS
+REAL(RPREC),DIMENSION(LD,NY),SAVE :: LBC_Z0=0.0_RPREC,LBC_SC_ZO=0.0_RPREC,    &
+                                     SC1_STAR=0.0_RPREC,                      &
+                                     USTAR_AVG=0.0_RPREC,                     &
+                                     PHI_H=1.0_RPREC,PHI_M=1.0_RPREC,         &
+                                     PSI_M=0.0_RPREC,PSI_H=0.0_RPREC,         &
+                                     OBK_L=0.0_RPREC,                         &
+                                     U1,V1,U_AVG,SC1_AVG
+
+!-------------------------------------------------------------------------------
+CONTAINS
+
+
+
+!!------------------------------------------------------------------------------
+!!  OBJECT: SUBROUTINE WALL_LAW()
+!!------------------------------------------------------------------------------
+!!
+!!  LAST MODIFIED: Marco Giometto ( mgiometto@gmail.com ), day 17/10/2012
+!!
+!!  DESCRIPTION:
+!!
+!!  calls the proper subroutine to compute stresses and dudz,dvdz.
+!!
+!!  Computes DUDZ(:,:,1),DVDZ(:,:,1),TXZ(:,:,1),TYZ(:,:,1). 
+!!  Out of this subroutine the values are put at W nodes so they're
+!!  shifted by DZ/2 compared to the position where U was read.
+!!
+!!------------------------------------------------------------------------------
+SUBROUTINE WALL_LAW(U,V,W,DUDZ,DVDZ,TXZ,TYZ,SC1,LBC_SC1)
+
+USE SIM_PARAM,ONLY: T2A,T2B,G_TEST,G_TEST_TEST
+
+IMPLICIT NONE
+
+REAL(RPREC),DIMENSION(LD,NY,0:NZ),INTENT(IN) :: U,V,W
+REAL(RPREC),DIMENSION(LD,NY,0:NZ),INTENT(OUT) :: DUDZ,DVDZ,TXZ,TYZ
+REAL(RPREC),DIMENSION(LD,NY,0:NZ),OPTIONAL,INTENT(IN) :: SC1
+REAL(RPREC),DIMENSION(LD,NY),OPTIONAL,INTENT(IN) :: LBC_SC1
+INTEGER :: JX,JY
+
+
+IF(VERBOSE) PRINT*,'IN WALL_LAW'
+
+
+!COMPUTE U1,V1,U_AVG
+!FILTERED WAY
+   U1=U(:,:,1)
+   V1=V(:,:,1)
+   CALL TEST_FILTER(U1,G_TEST)
+   CALL TEST_FILTER(V1,G_TEST)
+   DO JX=1,NX
+   DO JY=1,NY
+      U_AVG(JX,JY)=SQRT(U1(JX,JY)**2+V1(JX,JY)**2)
+   ENDDO
+   ENDDO
+   
+   !COMPUTE SC1_AVG,SC2_AVG
+   IF(PRESENT(SC1))THEN
+      SC1_AVG=SC1(:,:,1)
+      CALL TEST_FILTER(SC1_AVG,G_TEST)
+      !IF(PRESENT(SC2)) SC2_AVG=SC2(:,:,1)
+      !IF(PRESENT(SC2)) CALL TEST_FILTER(SC2_AVG,G_TEST)
+   ENDIF   
+   
+
+!COMPUTE USTAR_AVG,SC_STAR
+CALL OBUKHOV(USTAR_AVG,SC1_STAR,PSI_M,PSI_H,PHI_M,PHI_H,OBK_L,   &
+             U1,V1,U_AVG,SC1_AVG,LBC_SC1)
+
+!TRY VERSION
+DO JY=1,NY
+DO JX=1,NX
+   !CHECK FOR NAN VALUES IN CASE OF 0 VELOCITY
+   IF(U_AVG(JX,JY).EQ.0.0_RPREC)THEN
+      TXZ(JX,JY,1)=0.0_RPREC
+      TYZ(JX,JY,1)=0.0_RPREC
+      DUDZ(JX,JY,1)=0.0_RPREC
+      DVDZ(JX,JY,1)=0.0_RPREC
+   ELSE
+      DUDZ(JX,JY,1)=PHI_M(JX,JY)*USTAR_AVG(JX,JY)/(0.5_RPREC*DZ*VONK)   &
+                                *U1(JX,JY)/U_AVG(JX,JY)
+      DVDZ(JX,JY,1)=PHI_M(JX,JY)*USTAR_AVG(JX,JY)/(0.5_RPREC*DZ*VONK)   &
+                                *V1(JX,JY)/U_AVG(JX,JY)
+      TXZ(JX,JY,1)=USTAR_AVG(JX,JY)**2/U_AVG(JX,JY)*U1(JX,JY)
+      TYZ(JX,JY,1)=USTAR_AVG(JX,JY)**2/U_AVG(JX,JY)*V1(JX,JY)
+   ENDIF
+ENDDO
+ENDDO
+
+IF(VERBOSE) PRINT*,'OUT WALL_LAW'
+
+END SUBROUTINE WALL_LAW
+
+
+
+!!------------------------------------------------------------------------------
+!!  OBJECT: SUBROUTINE OBUKHOV ()
+!!------------------------------------------------------------------------------
+!!
+!!  LAST CHECKED/MODIFIED: Marco Giometto ( mgiometto@gmail.com ), day 15/11/2012
+!!
+!!  DESCRIPTION:
+!!
+!!  This subroutine computes u_star in the case of neutrally stratified and
+!!  stratified flows, it has some assumptions that might want to be considered
+!!  before running a simulation (e.g. see before JT=SC_A_INIT it takes a fixed
+!!  surface sgs fluxes)!!
+!!
+!!  EXTENDED DESCRIPTION:
+!!
+!!  IF .NOT.S_FLAG                --> -normal wall_law
+!!  IF JT_TOTAL .LT. SC_A_INIT    --> -computes U_AVG,THETA_AVG,WT_AVG
+!!                                    -computes USTAR_AVG with normal wall_law
+!!  IF JT_TOTAL .GE. SC_A_INIT    --> -computes U_AVG,THETA_AVG,WT_AVG
+!!                                    -computes USTAR_AVG with modified wall_law
+!!                                     (calls PSI to call the corr. functions)
+!!
+!!------------------------------------------------------------------------------
+SUBROUTINE OBUKHOV(USTAR_AVG,SC1_STAR,PSI_M,PSI_H,PHI_M,PHI_H,OBK_L,   &
+                   U1,V1,U_AVG,SC1_AVG,LBC_SC1)
+
+USE TEST_FILTERMODULE
+
+USE SIM_PARAM,ONLY: G_TEST,G_TEST_TEST,U
+
+IMPLICIT NONE
+
+
+REAL(RPREC),DIMENSION(LD,NY),INTENT(OUT) :: USTAR_AVG,SC1_STAR
+REAL(RPREC), DIMENSION(LD,NY),INTENT(OUT) :: PSI_M,PSI_H,PHI_M,PHI_H,OBK_L
+REAL(RPREC), DIMENSION(LD,NY),INTENT(IN) :: U_AVG,U1,V1
+REAL(RPREC), DIMENSION(LD,NY),OPTIONAL,INTENT(IN) :: SC1_AVG, &
+                                                     LBC_SC1
+
+INTEGER:: JX,JY,JZ,I,J,K
+
+
+!NEUTRAL CASE ------------------------------------------------------------------
+IF((.NOT.S_FLAG) .OR. (JT.LT.SC_A_INIT))THEN
+
+   IF (JT.EQ.1) PRINT*,'NORMAL WALL-LAW WILL BE ADOPTED!'
+   IF (JT.EQ.NSTEPS) PRINT*,'NORMAL WALL-LAW WAS ADOPTED!'
+   !COMPUTE USTAR_AVG
+   USTAR_AVG(:,:) = VONK*U_AVG(:,:)/DLOG((0.5_RPREC*DZ)/LBC_Z0(:,:)) 
+   IF(S_FLAG)THEN 
+   IF(LLBC_SC1.EQ.'NEU')THEN
+      SC1_STAR=-LBC_SC1/USTAR_AVG
+   ELSEIF(LLBC_SC1.EQ.'DRC')THEN
+      SC1_STAR(:,:)=-1.0_rprec * VONK*(DLBC_SC1-SC1_AVG(:,:))/DLOG((0.5_RPREC*DZ)/LBC_SC_ZO(:,:))    !this holds if we define theta_star=-w'b'/ustar 
+      if(mod(jt,wbase)==0) print*,'mean(sc1_star)=',SUM(SC1_STAR)/NX/NY
+   ELSE
+      PRINT*,'ATTENTION, MISSING OPTION TO COMPUTE SC1_STAR!'
+      STOP
+   ENDIF
+  ENDIF
+
+   !RE-INITIALIZE PSI AND PHI
+   PSI_M=0.0_RPREC
+   PSI_H=0.0_RPREC
+   PHI_M=1.0_RPREC
+   PHI_H=1.0_RPREC   
+   
+ELSEIF((S_FLAG) .AND. (JT.GE.SC_A_INIT))THEN  !FIX L_OBK FOR NORMALIZATION
+   
+   IF (JT.EQ.SC_A_INIT) PRINT*,'STAB. CORRECTED WALL-LAW WAS ADOPTED!'
+   IF (JT.EQ.NSTEPS)    PRINT*,'STAB. CORRECTED WALL-LAW WAS ADOPTED!'   
+   
+   !PICARD'S ITERATIONS TO COMPUTE U_STAR ECONOMICALLY
+   DO JX=1,U_STAR_IT
+      USTAR_AVG(:,:) = VONK*U_AVG(:,:)/(DLOG(0.5_RPREC*DZ/LBC_Z0(:,:))+PSI_M(:,:)) 
+      IF(LLBC_SC1.EQ.'NEU')THEN
+         SC1_STAR=-LBC_SC1/USTAR_AVG
+      ELSEIF(LLBC_SC1.EQ.'DRC')THEN
+         SC1_STAR(:,:) = -1.0_rprec * VONK*(DLBC_SC1-SC1_AVG(:,:))/(DLOG(0.5_RPREC*DZ/LBC_SC_ZO(:,:))+PSI_H(:,:)) 
+      ELSE
+         PRINT*,'ATTENTION, MISSING OPTION TO COMPUTE SC1_STAR!'
+         STOP
+      ENDIF
+     
+      IF(SLOPE)THEN
+         CALL L_OBK2(SC1_STAR,USTAR_AVG,OBK_L)             !BUOYANCY
+      ELSE
+         !CALL L_OBK1(SC1_STAR,USTAR_AVG,DLBC_SC1,OBK_L)    !POT.TEMP
+         CALL L_OBK_T(SC1_STAR,USTAR_AVG,SC1_AVG,OBK_L)
+      ENDIF
+      !CALL PSI_SAL(OBK_L,DZ/2.0_RPREC,LBC_SC_ZO,PSI_M)
+       CALL COMPUTE_PSI_M(OBK_L,DZ/2.0_rprec,LBC_Z0,PSI_M)
+       CALL COMPUTE_PSI_H(OBK_L,DZ/2.0_rprec,LBC_SC_ZO,PSI_H)
+
+   ENDDO
+   
+   !UPDATE PSI_H (PUT IT EQUAL TO PHI_M)
+   !CALL PSI_SABL(OBK_L,DZ/2.0_RPREC,LBC_SC_ZO,PSI_H)
+
+
+   !COMPUTE PHI TERMS FOR NORMALIZED MEAN GRADIENTS:
+   !CALL PHI_SABL(OBK_L,DZ/2.0_RPREC,PHI_M)
+   !CALL PHI_SABL(OBK_L,DZ/2.0_RPREC,PHI_H)
+    CALL COMPUTE_PHI_M(OBK_L,DZ/2.0_rprec,LBC_Z0,PHI_M)
+    CALL COMPUTE_PHI_H(OBK_L,DZ/2.0_rprec,LBC_SC_ZO,PHI_H)
+ 
+ENDIF
+
+
+!UPDATE SC1_STAR (EXPLICIT, SHOULD HAVE SOLVED A NONLINEAR SYSTEM OF EQ.)
+!IF(LLBC_SC1.EQ.'DRC') SC1_STAR=(SC1_AVG-LBC_SC1)*VONK/(DLOG(DZ/(2.0_RPREC*LBC_SC_ZO))+PSI_M)  (which of the two?)
+
+
+!UPDATE SC2_STAR (EXPLICIT, SHOULD HAVE SOLVED A NONLINEAR SYSTEM OF EQ.)
+!IF(HUMIDITY)THEN
+!   IF(LLBC_SC2.EQ.'DRC')THEN      
+!      SC2_STAR=(SC2_AVG-LBC_SC2)*VONK/(DLOG(DZ/(2.0_RPREC*LBC_SC_ZO))+PSI_M)   !PSI_H=PSI_M SABL
+!   ELSEIF(LLBC_SC2.EQ.'NEU')THEN
+!      SC2_STAR=-LBC_SC2/USTAR_AVG  !IMP. FOR KATABATIC
+!   ENDIF
+!ENDIF 
+
+END SUBROUTINE OBUKHOV 
+
+
+
+!!-----------------------------------------------------------------------------------
+!!  OBJECT: L_OBK1()
+!!-----------------------------------------------------------------------------------
+!!
+!!  LAST CHECKED/MODIFIED: Marco Giometto ( mgiometto@gmail.com ), day 15/11/2012
+!!
+!!  DESCRIPTION:
+!!
+!!  This subroutine computes the Obukhov lenght for SABL
+!!
+!!  SC_STAR     -->     friction potential temperature or friction heat value
+!!  U_STAR      -->     friction velocity
+!!  SC_REF      -->     reference value of the scalar to compute buoyancy
+!!  OBK_L       -->     Obukhov length
+!! 
+!!-----------------------------------------------------------------------------------
+SUBROUTINE L_OBK1(SC_STAR,U_STAR,SC_REF,OBK_L)
+
+IMPLICIT NONE
+
+REAL(RPREC),DIMENSION(LD,NY),INTENT(IN) :: SC_STAR,U_STAR
+REAL(RPREC),INTENT(IN) :: SC_REF
+REAL(RPREC),DIMENSION(LD,NY),INTENT(OUT) :: OBK_L
+INTEGER :: JX,JY
+
+OBK_L(:,:)=(SC_REF*U_STAR(:,:)**3)/(VONK*9.81_RPREC*SC_STAR(:,:))
+
+END SUBROUTINE L_OBK1
+
+
+!!-----------------------------------------------------------------------------------
+!!  OBJECT: L_OBK2()
+!!-----------------------------------------------------------------------------------
+!!
+!!  LAST CHECKED/MODIFIED: Marco Giometto ( mgiometto@gmail.com ), day 03/10/2013
+!!
+!!  DESCRIPTION:
+!!
+!!  This subroutine computes the Obukhov lenght for SABL when solving for buoyancy
+!!
+!!  SC_STAR     -->     friction buoyancy
+!!  U_STAR      -->     friction velocity
+!!  OBK_L       -->     Obukhov length
+!! 
+!!
+!!-----------------------------------------------------------------------------------
+SUBROUTINE L_OBK2(SC_STAR,U_STAR,OBK_L)
+
+IMPLICIT NONE
+
+REAL(RPREC),DIMENSION(LD,NY),INTENT(IN) :: SC_STAR,U_STAR
+REAL(RPREC),DIMENSION(LD,NY),INTENT(OUT) :: OBK_L
+INTEGER :: JX,JY
+
+OBK_L(:,:)=U_STAR(:,:)**3/(VONK*SC_STAR(:,:))
+
+END SUBROUTINE L_OBK2
+
+SUBROUTINE L_OBK_T(SC_STAR,U_STAR_IN,SC_REF,OBK_L)
+
+IMPLICIT NONE
+
+REAL(RPREC),DIMENSION(LD,NY),INTENT(IN) :: SC_STAR,U_STAR_IN
+REAL(RPREC),DIMENSION(LD,NY),INTENT(IN) :: SC_REF
+REAL(RPREC),DIMENSION(LD,NY),INTENT(OUT) :: OBK_L
+INTEGER :: JX,JY
+REAL(RPREC) :: non_dim_grav
+
+non_dim_grav = G * ( 1000.0_rprec )  
+OBK_L(:,:)=(SC_REF(:,:)*(U_STAR_IN(:,:))**2)/(VONK*non_dim_grav*SC_STAR(:,:))
+
+END SUBROUTINE L_OBK_T
+
+!!-----------------------------------------------------------------------------------
+!!  OBJECT: PSI_SABL ()
+!!-----------------------------------------------------------------------------------
+!!
+!!  LAST CHECKED/MODIFIED: Marco Giometto ( mgiometto@gmail.com ), day 14/11/2012
+!!
+!!  DESCRIPTION:
+!!
+!!  This subroutine computes the stability correction function for momentum and 
+!!  potential temperature for SABL (its the same in this case for SABL)
+!!
+!!  OBK_L       -->     Obukhov length
+!!  Z           -->     reference z value for computation of PHI_M/H
+!!  PSI         -->     stability correction function
+!!  
+!!-----------------------------------------------------------------------------------
+SUBROUTINE PSI_SABL(OBK_L,Z,Z0,PSI)
+
+IMPLICIT NONE
+
+REAL(RPREC),INTENT(IN) :: Z
+REAL(RPREC),DIMENSION(LD,NY),INTENT(IN) :: Z0,OBK_L
+REAL(RPREC),DIMENSION(LD,NY),INTENT(OUT) :: PSI
+REAL(RPREC),DIMENSION(LD,NY) :: CSI,CSI_0
+INTEGER :: JX,JY
+
+!BUILD VALUE OF ST_CSI
+CSI=Z/OBK_L
+CSI_0=Z0/OBK_L
+
+!BUILD PSI_M TOT: -PSI_M(Z)+PSI_M(Z0)
+DO JY=1,NY
+DO JX=1,NX
+   IF((CSI(JX,JY).LE.1.0_RPREC) .AND. (CSI(JX,JY).GE.0.0_RPREC))THEN
+      PSI(JX,JY)=5.0_RPREC*(CSI(JX,JY)-CSI_0(JX,JY))
+   ELSEIF(CSI(JX,JY).GT.1.0_RPREC)THEN
+      PSI(JX,JY)=5.0_RPREC*(DLOG(CSI(JX,JY))-DLOG(CSI_0(JX,JY)))
+   ELSE
+      PSI(JX,JY)=0.0_RPREC      !CORRECT? ASK MAYBE.
+   ENDIF
+ENDDO
+ENDDO
+
+END SUBROUTINE PSI_SABL
+
+SUBROUTINE COMPUTE_PSI_M(OBK_L,Z,Z0,PSI)
+
+IMPLICIT NONE
+
+REAL(RPREC),INTENT(IN) :: Z
+REAL(RPREC),DIMENSION(LD,NY),INTENT(IN) :: Z0,OBK_L
+REAL(RPREC),DIMENSION(LD,NY),INTENT(OUT) :: PSI
+REAL(RPREC) :: CSI,CSI_0
+INTEGER :: JX,JY
+REAL(RPREC) :: a_stable,b_stable
+REAL(RPREC) :: a_unstable,b_unstable,c_unstable,d_unstable,n_unstable,y_unstable,x_unstable
+real(rprec) :: temp_psi_1,temp_psi_2
+real(rprec) :: psi_0
+!BUILD VALUE OF ST_CSI
+
+a_stable = 6.0_rprec
+b_stable = 2.5_rprec
+
+a_unstable = 0.33_rprec
+b_unstable = 0.41_rprec
+c_unstable = 0.33_rprec
+d_unstable = 0.057_rprec
+n_unstable = 0.78_rprec
+
+
+!BUILD PSI_M TOT: -PSI_M(Z)+PSI_M(Z0)
+DO JY=1,NY
+ DO JX=1,NX
+
+   csi = z/obk_l(jx,jy)
+   csi_0 = z0(jx,jy)/obk_l(jx,jy)
+
+   IF(OBK_L(JX,JY) .ge. 0) then 
+    ! locally stable
+    psi(JX,JY) = -1.0_rprec * (-1.0_rprec*a_stable*dlog(csi + (1+csi**b_stable)**(1.0_rprec/b_stable))) &
+                 + (-1.0_rprec*a_stable*dlog(csi_0 + (1+(csi_0)**b_stable)**(1.0_rprec/b_stable)))
+                 
+   ELSE ! locally unstable
+    temp_psi_1 = 0.0_rprec
+    y_unstable = -1.0_rprec * csi
+    x_unstable = (y_unstable/a_unstable)**(1.0_rprec/3.0_rprec)
+    psi_0 = -1.0_rprec * dlog(a_unstable) + 3.0_rprec**(0.5_rprec) * b_unstable * (a_unstable**(1.0_rprec/3.0_rprec))*pi*(1.0_rprec/6.0_rprec)
+    if(y_unstable .le. b_unstable**(-3.0_rprec)) then
+    temp_psi_1 = dlog(a_unstable+y_unstable) - 3.0_rprec * b_unstable * y_unstable**(1.0_rprec/3.0_rprec) + &
+           b_unstable*(a_unstable**(1.0_rprec/3.0_rprec))*0.5_rprec * dlog(((1+x_unstable)**2.0_rprec)/(1.0_rprec - x_unstable + x_unstable**2.0_rprec )) + &
+           (3.0_rprec**(0.5_rprec))*b_unstable*(a_unstable**(1.0_rprec/3.0_rprec))*datan((2.0_rprec*x_unstable - 1.0_rprec)/(3.0_rprec**(0.5_rprec))) + psi_0
+    else
+    y_unstable = b_unstable**(-3.0_rprec)
+    temp_psi_1 = dlog(a_unstable+y_unstable) - 3.0_rprec * b_unstable * y_unstable**(1.0_rprec/3.0_rprec) + &
+           b_unstable*(a_unstable**(1.0_rprec/3.0_rprec))*0.5_rprec * dlog(((1+x_unstable)**2.0_rprec)/(1.0_rprec - x_unstable + x_unstable**2.0_rprec )) + &
+           (3.0_rprec**(0.5_rprec))*b_unstable*(a_unstable**(1.0_rprec/3.0_rprec))*datan((2.0_rprec*x_unstable - 1.0_rprec)/(3.0_rprec**(0.5_rprec))) + psi_0
+    endif
+
+    temp_psi_2 = 0.0_rprec
+    y_unstable = -1.0_rprec * csi_0
+    x_unstable = (y_unstable/a_unstable)**(1.0_rprec/3.0_rprec)
+    psi_0 = -1.0_rprec * dlog(a_unstable) + 3.0_rprec**(0.5_rprec) * b_unstable * (a_unstable**(1.0_rprec/3.0_rprec))*pi*(1.0_rprec/6.0_rprec)
+    if(y_unstable .le. b_unstable**(-3.0_rprec)) then
+    temp_psi_2 = dlog(a_unstable+y_unstable) - 3.0_rprec * b_unstable * y_unstable**(1.0_rprec/3.0_rprec) + &
+           b_unstable*(a_unstable**(1.0_rprec/3.0_rprec))*0.5_rprec * dlog(((1+x_unstable)**2.0_rprec)/(1.0_rprec - x_unstable + x_unstable**2.0_rprec )) + &
+           (3.0_rprec**(0.5_rprec))*b_unstable*(a_unstable**(1.0_rprec/3.0_rprec))*datan((2.0_rprec*x_unstable - 1.0_rprec)/(3.0_rprec**(0.5_rprec))) + psi_0
+    else
+    y_unstable = b_unstable**(-3.0_rprec)
+    temp_psi_2 = dlog(a_unstable+y_unstable) - 3.0_rprec * b_unstable * y_unstable**(1.0_rprec/3.0_rprec) + &
+           b_unstable*(a_unstable**(1.0_rprec/3.0_rprec))*0.5_rprec * dlog(((1+x_unstable)**2.0_rprec)/(1.0_rprec - x_unstable + x_unstable**2.0_rprec )) + &
+           (3.0_rprec**(0.5_rprec))*b_unstable*(a_unstable**(1.0_rprec/3.0_rprec))*datan((2.0_rprec*x_unstable - 1.0_rprec)/(3.0_rprec**(0.5_rprec))) + psi_0
+    endif
+
+    psi(jx,jy) = -1.0_rprec*temp_psi_1 + temp_psi_2
+
+   ENDIF
+
+ ENDDO
+ENDDO
+
+END SUBROUTINE COMPUTE_PSI_M
+
+SUBROUTINE COMPUTE_PSI_H(OBK_L,Z,Z0,PSI)
+
+IMPLICIT NONE
+
+REAL(RPREC),INTENT(IN) :: Z
+REAL(RPREC),DIMENSION(LD,NY),INTENT(IN) :: Z0,OBK_L
+REAL(RPREC),DIMENSION(LD,NY),INTENT(OUT) :: PSI
+REAL(RPREC) :: CSI,CSI_0
+INTEGER :: JX,JY
+REAL(RPREC) :: a_stable,b_stable
+REAL(RPREC) :: a_unstable,b_unstable,c_unstable,d_unstable,n_unstable,y_unstable,x_unstable
+real(rprec) :: temp_psi_1,temp_psi_2
+!BUILD VALUE OF ST_CSI
+
+a_stable = 6.0_rprec
+b_stable = 2.5_rprec
+
+a_unstable = 0.33_rprec
+b_unstable = 0.41_rprec
+c_unstable = 0.33_rprec
+d_unstable = 0.057_rprec
+n_unstable = 0.78_rprec
+
+
+!BUILD PSI_M TOT: -PSI_M(Z)+PSI_M(Z0)
+DO JY=1,NY
+ DO JX=1,NX
+
+   csi = z/obk_l(jx,jy)
+   csi_0 = z0(jx,jy)/obk_l(jx,jy)
+
+   IF(OBK_L(JX,JY) .ge. 0) then 
+    ! locally stable
+    psi(JX,JY) = -1.0_rprec * (-1.0_rprec*a_stable*dlog(csi + (1+csi**b_stable)**(1.0_rprec/b_stable))) &
+                 + (-1.0_rprec*a_stable*dlog(csi_0 + (1+(csi_0)**b_stable)**(1.0_rprec/b_stable)))
+                 
+   ELSE ! locally unstable
+    temp_psi_1 = 0.0_rprec
+    y_unstable = -1.0_rprec * csi
+    temp_psi_1 = ((1.0_rprec-d_unstable)/n_unstable)*dlog((c_unstable + y_unstable**(n_unstable))/c_unstable)
+
+    temp_psi_2 = 0.0_rprec
+    y_unstable = -1.0_rprec * csi_0
+    temp_psi_2 = ((1.0_rprec-d_unstable)/n_unstable)*dlog((c_unstable + y_unstable**(n_unstable))/c_unstable)
+
+    psi(jx,jy) = -1.0_rprec*temp_psi_1 + temp_psi_2
+
+   ENDIF
+
+ ENDDO
+ENDDO
+
+END SUBROUTINE COMPUTE_PSI_H
+
+
+SUBROUTINE COMPUTE_PHI_M(OBK_L,Z,Z0,PHI)
+
+IMPLICIT NONE
+
+REAL(RPREC),INTENT(IN) :: Z
+REAL(RPREC),DIMENSION(LD,NY),INTENT(IN) :: Z0,OBK_L
+REAL(RPREC),DIMENSION(LD,NY),INTENT(OUT) :: PHI
+REAL(RPREC) :: CSI,CSI_0
+INTEGER :: JX,JY
+REAL(RPREC) :: a_stable,b_stable
+REAL(RPREC) :: a_unstable,b_unstable,c_unstable,d_unstable,n_unstable,y_unstable,x_unstable
+real(rprec) :: temp_psi_1,temp_psi_2
+!BUILD VALUE OF ST_CSI
+
+a_stable = 6.0_rprec
+b_stable = 2.5_rprec
+
+a_unstable = 0.33_rprec
+b_unstable = 0.41_rprec
+c_unstable = 0.33_rprec
+d_unstable = 0.057_rprec
+n_unstable = 0.78_rprec
+
+
+!BUILD PSI_M TOT: -PSI_M(Z)+PSI_M(Z0)
+DO JY=1,NY
+ DO JX=1,NX
+
+   csi = z/obk_l(jx,jy)
+   csi_0 = z0(jx,jy)/obk_l(jx,jy)
+
+   IF(OBK_L(JX,JY) .ge. 0) then 
+    ! locally stable
+    phi(jx,jy) = 1.0_rprec + a_stable * ( (csi + (csi**(b_stable))*(1.0_rprec + (csi**(b_stable)))**(-1.0_rprec + 1.0_rprec/b_stable)) /&
+                                          (csi + (1.0_rprec + csi**(b_stable))**(1.0_rprec/b_stable)) )    
+   ELSE ! locally unstable
+    y_unstable = -1.0_rprec * csi
+    if(y_unstable .le. b_unstable**(-3.0_rprec)) then
+      phi(jx,jy) = (a_unstable + b_unstable*y_unstable**(4.0_rprec/3.0_rprec)) / (a_unstable + y_unstable)
+    else
+      phi(jx,jy) = 1.0_rprec
+    endif
+
+   ENDIF
+
+ ENDDO
+ENDDO
+
+END SUBROUTINE COMPUTE_PHI_M
+
+SUBROUTINE COMPUTE_PHI_H(OBK_L,Z,Z0,PHI)
+
+IMPLICIT NONE
+
+REAL(RPREC),INTENT(IN) :: Z
+REAL(RPREC),DIMENSION(LD,NY),INTENT(IN) :: Z0,OBK_L
+REAL(RPREC),DIMENSION(LD,NY),INTENT(OUT) :: PHI
+REAL(RPREC) :: CSI,CSI_0
+INTEGER :: JX,JY
+REAL(RPREC) :: a_stable,b_stable
+REAL(RPREC) :: a_unstable,b_unstable,c_unstable,d_unstable,n_unstable,y_unstable,x_unstable
+!BUILD VALUE OF ST_CSI
+
+a_stable = 6.0_rprec
+b_stable = 2.5_rprec
+
+a_unstable = 0.33_rprec
+b_unstable = 0.41_rprec
+c_unstable = 0.33_rprec
+d_unstable = 0.057_rprec
+n_unstable = 0.78_rprec
+
+
+!BUILD PSI_M TOT: -PSI_M(Z)+PSI_M(Z0)
+DO JY=1,NY
+ DO JX=1,NX
+
+   csi = z/obk_l(jx,jy)
+   csi_0 = z0(jx,jy)/obk_l(jx,jy)
+
+   IF(OBK_L(JX,JY) .ge. 0) then 
+    ! locally stable
+    phi(jx,jy) = 1.0_rprec + a_stable * ( (csi + (csi**(b_stable))*(1.0_rprec + (csi**(b_stable)))**(-1.0_rprec + 1.0_rprec/b_stable)) /&
+                                          (csi + (1.0_rprec + csi**(b_stable))**(1.0_rprec/b_stable)) )    
+   ELSE ! locally unstable
+    y_unstable = -1.0_rprec * csi
+
+    phi(jx,jy) = (c_unstable + d_unstable*(y_unstable**(n_unstable)))/(c_unstable + (y_unstable**(n_unstable)))
+
+   ENDIF
+
+ ENDDO
+ENDDO
+
+END SUBROUTINE COMPUTE_PHI_H
+
+
+!!-----------------------------------------------------------------------------------
+!!  OBJECT: PHI_SABL ()
+!!-----------------------------------------------------------------------------------
+!!
+!!  LAST CHECKED/MODIFIED: Marco Giometto ( mgiometto@gmail.com ), day 14/11/2012
+!!
+!!  DESCRIPTION:
+!!
+!!  This subroutine computes the value of the normalized mean gradient of
+!!  velocity / potential temperature for SABL (its the same in this case for SABL)
+!!
+!!  SC_STAR     -->     friction potential temperature or friction heat value
+!!  U_STAR      -->     friction velocity
+!!  SC_REF      -->     reference value of the scalar to compute buoyancy
+!!  Z           -->     reference z value for computation of PHI_M/H
+!!  PHI         -->     value of normalized gradient
+!!  
+!!-----------------------------------------------------------------------------------
+SUBROUTINE PHI_SABL(OBK_L,Z,PHI)
+
+IMPLICIT NONE
+
+REAL(RPREC),INTENT(IN) :: Z
+REAL(RPREC),DIMENSION(LD,NY),INTENT(IN) :: OBK_L
+REAL(RPREC),DIMENSION(LD,NY),INTENT(OUT) :: PHI
+REAL(RPREC),DIMENSION(LD,NY) :: CSI
+INTEGER :: JX,JY
+
+!BUILD VALUE OF ST_CSI
+CSI=Z/OBK_L
+
+!BUILD PHI
+DO JY=1,NY
+DO JX=1,NX
+   IF((CSI(JX,JY).GE.0.0_RPREC) .AND. (CSI(JX,JY).LE.1.0_RPREC))THEN
+      PHI(JX,JY)=1.0_RPREC+5.0_RPREC*CSI(JX,JY)
+   ELSEIF(CSI(JX,JY).GT.1.0_RPREC)THEN
+      PHI(JX,JY)=6.0_RPREC
+   ELSE
+      PHI(JX,JY)=1.0_RPREC      !SHOULD USE THE CORRECT ONE FOR UNSTABLE COND.
+   ENDIF
+ENDDO
+ENDDO
+
+END SUBROUTINE PHI_SABL
+
+
+
+! subroutine PSI_compute(i,j,grav,uf,stab,SC_AVG)
+! 
+! use types,only:rprec
+! !use sim_param,only:u,v,theta,path
+! use sim_param
+! 
+! use test_filtermodule
+! implicit none
+! 
+! integer:: i,j,jz
+! real(kind=rprec), dimension(nx,ny):: x,zeta,x0,zeta0 
+! real(kind=rprec):: a,b,c,d,n,y,yy,xx,psi_zero,y0
+! 
+! real(kind=rprec) uf 
+! real(kind=rprec) grav,stab !stab = psi_m
+! REAL(RPREC), DIMENSION(LD,NY),INTENT(IN) :: SC_AVG
+! 
+! 
+! ! Compute Obukhov Length
+!     
+! !
+! L(i,j)=-uf**3/(vonk*(grav/SC_AVG(i,j))*SC1_STAR(i,j))
+! wstar(i,j)=sign((grav/SC_AVG(i,j)*abs(SC1_STAR(i,j)))**(1./3.),SC1_STAR(i,j))
+! 
+! ! w_star is defined as [(g/<T_0>)*<w'T'>*z_i]**(1/3) (refer to Nieuwstadt et al., 
+! ! Turbulent Shear flows, 1991). Since we are computing the non-dimensional value of w_star
+! ! the formula transforms to [(g_nd/<T_0_nd>)*<w'T'>_nd]**(1/3) where the suffix
+! ! _nd refers to being non-dimensionalized, using "u_star", "T_scale" and "z_i".
+! 
+! !Convective scenario. --------------------------------------------
+! !-----------------------------------------------------------------
+! if ((L(i,j)<0._rprec) .and. (SC1_STAR(i,j) .ne. 0._rprec)) then 
+! 
+!    !A) Brutsaert's Stability function: ---------------------------
+!    
+!    if (stab_function == 'brutsaert') then
+!       a = 0.33d0
+!       b = 0.41d0
+!       c = 0.33d0
+!       d = 0.057d0
+!       n = 0.78d0
+!       y = - (dz/2.d0)/L(i,j)
+! 
+!       if (y > b**(-3) ) then
+!          
+!          phi_m(i,j) = 1.d0
+! 
+!          yy =  (b**(-3.d0))
+!          xx = (yy/a)**(1.d0/3.d0)
+!          psi_zero = -dlog(a) + ((3.d0**(1.d0/2.d0))*b*(a**(1.d0/3.d0))*(pi/6.d0))
+!          
+!          stab = dlog(a+yy) - (3.d0*b*(yy**(1.d0/3.d0))) + &
+!               (((b*(a**(1.d0/3.d0)))/2.d0)*dlog(((1+xx)**2)/(1 - xx + (xx**2)))) + &
+!               ((3.d0**(1.d0/2.d0))*b*(a**(1.d0/3.d0)))*(datan(((2.d0*xx)-1)/(3.d0**(1.d0/2.d0)))) &
+!               + psi_zero
+! 
+! 
+!       else
+! 
+!          phi_m(i,j) = ( a + (b*(y**(4.d0/3.d0))) )/(a+y)
+! 
+!          xx = (y/a)**(1.d0/3.d0)
+!          psi_zero = -dlog(a) + ((3.d0**(1.d0/2.d0))*b*(a**(1.d0/3.d0))*(pi/6.d0))
+! 
+!          stab = dlog(a+y) - (3.d0*b*(y**(1.d0/3.d0))) + &
+!               (((b*(a**(1.d0/3.d0)))/2.d0)*dlog(((1+xx)**2)/(1 - xx + (xx**2)))) + &
+!               ((3.d0**(1.d0/2.d0))*b*(a**(1.d0/3.d0)))*(datan(((2.d0*xx)-1)/(3.d0**(1.d0/2.d0)))) &
+!               + psi_zero
+! 
+!       end if
+!             
+!       phi_h(i,j) = (c + (d*(y**n)))/(c+(y**n))
+!       psi_h(i,j) = ((1-d)/n)*dlog((c+(y**n))/c)
+! 
+!       !B) Benoit's Stability function: ----------------------------
+!    else 
+!       if (stab_function == 'benoit') then
+! 
+!          !Benoit's Stability correction. (Benoit 1977, Journal of applied meteorology)
+!          
+!          y =(1._rprec - 15._rprec*((dz/2._rprec)/L(i,j)) )**.25_rprec
+!          y0 =(1._rprec - 15._rprec*((LBC_ZO(i,j))/L(i,j)) )**.25_rprec
+!                
+!          stab = dlog( (((y0**2.d0)+1.d0)*((y0+1.d0)**2.d0))/(((y**2.d0)+1.d0)*((y+1.d0)**2.d0)) ) + &
+!               2.d0*(datan(y) - datan(y0))
+! 
+!          !C) Paulson's Stability function: ---------------------------
+!       else
+! 
+!          !Paulson's Stability correction.
+!                
+!          x(i,j)=(1._rprec-15.2_rprec*dz/2._rprec/L(i,j))**.25_rprec
+!          stab =2._rprec*dlog((1.+x(i,j))/2._rprec)+&
+!               dlog((1._rprec+x(i,j)**2)/2._rprec)-2._rprec*datan(x(i,j))+pi/2._rprec
+! 
+!          psi_h(i,j)=2._rprec*dlog((1._rprec+x(i,j)**2)/2._rprec)
+!          phi_m(i,j)=x(i,j)**(-1)
+!          phi_h(i,j)=x(i,j)**(-2)
+! 
+!          x0(i,j)=(1._rprec-16._rprec*LBC_ZO(i,j)/L(i,j))**.25_rprec
+!          psi_m0(i,j)=2._rprec*dlog((1.+x0(i,j))/2._rprec)+& !MCB, at the surface, with z0 height.
+!               dlog((1._rprec+x0(i,j)**2)/2._rprec)-2._rprec*datan(x0(i,j))+pi/2._rprec
+!       end if
+! 
+!    end if
+! 
+! else 
+!    !Stable scenario. ------------------------------------------------
+!    !-----------------------------------------------------------------
+!          
+!    if ((L(i,j)>0._rprec).and.(SC1_STAR(i,j).ne. 0._rprec)) then
+! 
+!       ! Implementing new formulations for phi and psi for stable case
+!       ! using Cheng & Brutsaert (2004): source - Brutsaert's book from
+!       ! Marc's Hydrology course the new relations are from the GABLS study
+!       zeta(i,j)=0.5_rprec*dz/L(i,j)
+!       zeta0(i,j)=LBC_ZO(i,j)/L(i,j)
+!       
+!       ! %%%%%%%%%%%%%%%%%%%%%%%% Formulations used in GABLS (Good for z/L < 1)%%%%%%%%%%%%%%%%
+!       ! %%%%%%%%%%%%%%%%%%%%%%%% Also apeearing in Hogstorm, BLM, 1988)%%%%%%%%%%%%%%%%
+!       !if ((jan_diurnal_run) .OR. (GABLS_diurnal_test)) then !USE MO functions for z/L < 1
+!       ! %%%%%%%%%%%%%%%%%%%%%%%% Formulations used in Cheng & Brutsaert (BLM,2005) %%%%%%%%%%%%
+!       ! X=z/L where z in present case is dz/2 and L is the Obukhov length
+!       ! The equations: phi_m(X) = 1+a*[(X+(X^b)*{(1+X^b)^(-1+1/b)})/(X+{(1+X^b)^(1/b)})];a=6.1;b=2.5
+!       ! The equations: phi_h(X) = 1+c*[(X+(X^d)*{(1+X^d)^(-1+1/d)})/(X+{(1+X^d)^(1/d)})];c=5.3;d=1.1
+!       ! The equations: psi_m(X) = -a*ln[X+{(1+X^b)^(1/b)}];a=6.1;b=2.5
+!       ! The equctions: psi_h(X) = -c*ln[X+{(1+X^d)^(1/d)}];c=5.3;d=1.1
+!       ! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+!       phi_m(i,j)=1._rprec+6.1_rprec*(zeta(i,j)+zeta(i,j)**2.5_rprec*&
+!            ((1._rprec+zeta(i,j)**2.5_rprec)**(-1._rprec+1._rprec/2.5_rprec)))/(zeta(i,j)+&
+!            ((1._rprec+zeta(i,j)**2.5_rprec)**(1._rprec/2.5_rprec)))
+!       
+!       stab =-1._rprec*6.1_rprec*dlog(zeta(i,j)+((1._rprec+&
+!            zeta(i,j)**2.5_rprec)**(1._rprec/2.5_rprec)))
+!       
+!       psi_m0(i,j)=-1._rprec*6.1_rprec*dlog(zeta0(i,j)+((1._rprec+& !MCB, at the surface, with z0 height.
+!            zeta0(i,j)**2.5_rprec)**(1._rprec/2.5_rprec)))
+!       
+!       phi_h(i,j)=1._rprec+5.3_rprec*(zeta(i,j)+zeta(i,j)**1.1_rprec*&
+!            ((1._rprec+zeta(i,j)**1.1_rprec)**(-1._rprec+1._rprec/1.1_rprec)))/(zeta(i,j)+&
+!            ((1._rprec+zeta(i,j)**1.1_rprec)**(1._rprec/1.1_rprec)))
+!       
+!       psi_h(i,j)=-1._rprec*5.3_rprec*dlog(zeta(i,j)+((1._rprec+&
+!            zeta(i,j)**1.1_rprec)**(1._rprec/1.1_rprec)))
+!       
+!       ! %%%%%%%%%%%%%%%%%%%%%%%% Formulations used in Brutsaert (1982) %%%%%%%%%%%%%%%%%%%%
+!       !             phi_m(jx,jy)=1._rprec+5.0_rprec*zeta(jx,jy)
+!       !             phi_h(jx,jy)=1._rprec+5.0_rprec*zeta(jx,jy)
+!       !             psi_m(jx,jy)=-1._rprec*5.0_rprec*zeta(jx,jy)
+!       !             psi_h(jx,jy)=-1._rprec*5.0_rprec*zeta(jx,jy)
+!       !end if ! end for the jan_diurnal_run if block     
+!    else
+! 
+!       !Neutral scenario. -----------------------------------------------
+!       !-----------------------------------------------------------------
+!       stab=0._rprec
+!       psi_m0(i,j)=0._rprec !MCB, at the surface, with z0 height.
+!       
+!       psi_h(i,j)=0._rprec
+!       phi_m(i,j)=1._rprec
+!       phi_h(i,j)=0.6d0
+!    end if ! (Loop5 ends)
+! end if
+! 
+! end subroutine PSI_compute
+
+! !---------------------- MCB -------------------------------------------
+! !---------------------- --- -------------------------------------------
+! 
+! subroutine obukhov2
+! 
+! use types,only:rprec
+! 
+! implicit none
+! 
+! integer :: jz,jx,jy,k
+! real (rprec), dimension (nz):: z_dist
+! real (rprec), dimension (nx,ny,nz) :: x_tot, zeta_tot, zeta0_tot
+! real (rprec) :: a,b,c,d,n,y,yy,xx,psi0,y0
+! 
+! !------------------------------------------------------------------!
+! ! Computation of the complete 3D - stability correction functions: !
+! ! Added by MCB, 6/10/09                                            !
+! !------------------------------------------------------------------!
+! do jz = 1,nz
+!    do jx = 1,nx      
+!       do jy = 1,ny
+! 
+!          !WE must account for the parallelization of the vertical layer.
+!          if (USE_MPI) then
+!             k = eta_displ(coord) + jz
+!          else
+!             k = jz
+!          end if
+! 
+!          z_dist(jz) = ((2.d0*k)-1.d0)*(dz/2.d0)
+!          
+!          if ((L(jx,jy)<0._rprec) .and. (SC1_STAR(jx,jy) .ne. 0._rprec).and.(.not.passive_scalar)) then
+!             
+!             !Unstable stratification, formulation from Brutsaert 2005. (Brutsaerts's book, pag 49-50)
+!             if (stab_function == 'brutsaert') then
+!                a = 0.33d0
+!                b = 0.41d0
+!                c = 0.33d0
+!                d = 0.057d0
+!                n = 0.78d0
+!                y = - (z_dist(jz)/L(jx,jy))
+! 
+!                if (y > b**(-3) ) then
+! 
+!                   phi_m_tot(jx,jy,jz) = 1.d0
+! 
+!                   yy =  (b**(-3.d0))
+!                   xx = (yy/a)**(1.d0/3.d0)
+!                   psi0 = -dlog(a) + ((3.d0**(1.d0/2.d0))*b*(a**(1.d0/3.d0))*(pi/6.d0))
+! 
+!                   psi_m_tot(jx,jy,jz) = dlog(a+yy) - (3.d0*b*(yy**(1.d0/3.d0))) + &
+!                        (((b*(a**(1.d0/3.d0)))/2.d0)*dlog(((1+xx)**2)/(1 - xx + (xx**2)))) + &
+!                        ((3.d0**(1.d0/2.d0))*b*(a**(1.d0/3.d0)))*(datan(((2.d0*xx)-1)/(3.d0**(1.d0/2.d0)))) &
+!                        + psi0
+! 
+! 
+!                else
+! 
+!                   phi_m_tot(jx,jy,jz) = ( a + (b*(y**(4.d0/3.d0))) )/(a+y)
+!                   
+!                   xx = (y/a)**(1.d0/3.d0)
+! 
+!                   psi0 = -dlog(a) + ((3.d0**(1.d0/2.d0))*b*(a**(1.d0/3.d0))*(pi/6.d0))
+! 
+!                   psi_m_tot(jx,jy,jz) = dlog(a+y) - (3.d0*b*(y**(1.d0/3.d0))) &
+!                        + (((b*(a**(1.d0/3.d0)))/2.d0)*dlog(((1+xx)**2)/(1 - xx + (xx**2)))) + &
+!                        ((3.d0**(1.d0/2.d0))*b*(a**(1.d0/3.d0)))*(datan(((2.d0*xx)-1)/(3.d0**(1.d0/2.d0)))) &
+!                        + psi0
+! 
+!                end if
+! 
+!                phi_h_tot(jx,jy,jz) = (c + (d*(y**n)))/(c+(y**n))
+!                psi_h_tot(jx,jy,jz) = ((1-d)/n)*dlog((c+(y**n))/c)
+! 
+!             else
+!                if (stab_function == 'benoit') then
+! 
+!                   !Benoit's Stability correction. (Benoit 1977, Journal of applied meteorology)
+!                
+!                   y =(1._rprec - 15._rprec*((z_dist(jz))/L(jx,jy)) )**.25_rprec
+!                   y0 =(1._rprec - 15._rprec*((LBC_ZO(jx,jy))/L(jx,jy)) )**.25_rprec
+!                
+!                   psi_m_tot(jx,jy,jz) = dlog( (((y0**2.d0)+1.d0)*((y0+1.d0)**2.d0))/(((y**2.d0)+1.d0)*((y+1.d0)**2.d0)) ) + &
+!                        2.d0*(datan(y) - datan(y0))
+! 
+! 
+!                else !Paulson's Stability correction.
+! 
+!                   !Unstable stratification, formulation from Paulson 1970. (Stull's book.)
+!                   x_tot(jx,jy,jz)=(1._rprec-16._rprec*(z_dist(jz))/L(jx,jy))**.25_rprec
+! 
+!                   psi_m_tot(jx,jy,jz)=2._rprec*dlog((1.+x_tot(jx,jy,jz))/2._rprec)+&
+!                        dlog((1._rprec+x_tot(jx,jy,jz)**2)/2._rprec)-2._rprec*datan(x_tot(jx,jy,jz))+ pi/2._rprec
+! 
+!                   psi_h_tot(jx,jy,jz)=2._rprec*dlog((1._rprec+x_tot(jx,jy,jz)**2)/2._rprec)
+! 
+!                   phi_m_tot(jx,jy,jz)=x_tot(jx,jy,jz)**(-1)
+!                   phi_h_tot(jx,jy,jz)=x_tot(jx,jy,jz)**(-2)
+! 
+!                end if
+!             end if
+! 
+!          else !(If it is NOT an unstable case,...)
+!             
+!             if ((L(jx,jy)>0._rprec).and.(SC1_STAR(jx,jy).ne. 0._rprec).and.(.not.passive_scalar)) then
+!                
+!                !Stable stratification, formulation from Brutsaert 2005.
+!                zeta_tot(jx,jy,jz)= (z_dist(jz))/L(jx,jy)
+!                zeta0_tot(jx,jy,jz)=LBC_ZO(jx,jy)/L(jx,jy)
+! 
+!                phi_m_tot(jx,jy,jz)=1._rprec+6.1_rprec*(zeta_tot(jx,jy,jz)+zeta_tot(jx,jy,jz)**2.5_rprec*&
+!                     ((1._rprec+zeta_tot(jx,jy,jz)**2.5_rprec)**(-1._rprec+1._rprec/2.5_rprec)))/(zeta_tot(jx,jy,jz)+&
+!                     ((1._rprec+zeta_tot(jx,jy,jz)**2.5_rprec)**(1._rprec/2.5_rprec)))
+!             
+!                psi_m_tot(jx,jy,jz)=-1._rprec*6.1_rprec*dlog(zeta_tot(jx,jy,jz)+((1._rprec+&
+!                     zeta_tot(jx,jy,jz)**2.5_rprec)**(1._rprec/2.5_rprec)))
+! 
+!                phi_h_tot(jx,jy,jz)=1._rprec+5.3_rprec*(zeta_tot(jx,jy,jz)+zeta_tot(jx,jy,jz)**1.1_rprec*&
+!                     ((1._rprec+zeta_tot(jx,jy,jz)**1.1_rprec)**(-1._rprec+1._rprec/1.1_rprec)))/(zeta_tot(jx,jy,jz)+&
+!                     ((1._rprec+zeta_tot(jx,jy,jz)**1.1_rprec)**(1._rprec/1.1_rprec)))
+!             
+!                psi_h_tot(jx,jy,jz)=-1._rprec*5.3_rprec*dlog(zeta_tot(jx,jy,jz)+((1._rprec+&
+!                     zeta_tot(jx,jy,jz)**1.1_rprec)**(1._rprec/1.1_rprec)))
+! 
+!             else
+! 
+!                !Neutral stability case or the case with a Passive scalar:
+!                psi_m_tot(jx,jy,jz)=0._rprec
+!                psi_h_tot(jx,jy,jz)=0._rprec
+! 
+!                phi_m_tot(jx,jy,jz) = 1.d0
+!                phi_h_tot(jx,jy,jz) = 0.6d0
+! 
+!             end if
+! 
+!          end if
+! 
+!       end do
+!    end do
+! end do
+! !------------------------------------------------------------------!
+! !------------------------------------------------------------------!
+! ! For post-processing purposes:
+! ! We compute at each time step, the actual theoretical loglaw,
+! ! which will be time averaged in accordance with the LES code:
+! 
+! do jz = 1,nz
+!    do jx = 1,nx
+!       do jy = 1,ny
+! 
+!          !WE must account for the parallelization of the vertical layer.
+!          if (USE_MPI) then
+!             k = eta_displ(coord) + jz
+!          else
+!             k = jz
+!          end if
+! 
+!          z_dist(jz) = ((2.d0*k)-1.d0)*(dz/2.d0)
+! 
+!          utheory(jx,jy,jz) = (1.d0/vonk)*( (log(z_dist(jz)/LBC_ZO(jx,jy))) - psi_m_tot(jx,jy,jz) )
+!          utheory2(jx,jy,jz) = (ustar_avg(jx,jy)/vonk)*( (log(z_dist(jz)/LBC_ZO(jx,jy))) - psi_m_tot(jx,jy,jz)  )
+!          stabCorr(jx,jy,jz) = ustar_avg(jx,jy)*psi_m_tot(jx,jy,jz)
+!       end do
+!    end do
+! end do
+! 
+! end subroutine obukhov2
+! 
+
+
+END MODULE MWALL_LAW

@@ -1,0 +1,155 @@
+#GEOMETRY
+L_X= 0.00200 # 3.141628 # 12.56637 #3.141628 #6.283256
+L_Y= 0.00200 # 3.141628 #6.283256
+L_Z= 0.0012 #2.0000 #1.000000
+#TIME_STEPPING 
+NSTEPS= 1000000
+DT= 0.0000001
+TR_STEPS= 0
+TR_DT_FACTOR= 1.0
+#SIMULATION PARAMETERS
+RE= 100000000
+U_STAR= 1.0
+RI_SC1= 0.0
+PR_SC1= 0.715
+PR_SGS_SC1= 0.715
+PR_SC2= 0.615
+PR_SGS_SC2= 0.615
+#FLAGS
+SGS= T
+SC1= T
+SC2= T
+SLOPE= F
+ALPHA= 0.0
+FORCE_X= 300.0          # CORRESPONDS TO USTAR=1 WITH LZ=0.5
+FORCE_Y= 0.0          #-0.914
+#GEOSTROPHIC
+coriol= 0.00 #0.13942923 # actual coriolis parameter times 1000
+ug= 0.00 #6.0000000
+vg= 0.00 #0.0000000
+#SGS
+MODEL= 7   #1->STAT; 2->DYN; 3->SDEP 4->LAGR SCALE-SIM 5->LAGR SCALE-DEP
+FILTER= 1  #1->CO 2->GSS 3->TH 
+CS_CNT= 5
+I_DYN= 10000
+CO= 0.1
+WALL_DMP= F
+
+#################################################################
+#MOMENTUM IC
+VI1= F     #CONSTANT
+VI2= T	   #LOG
+VI3= F     #POISEUILLE
+VI4= F     #LINEAR
+VNF= 1.0
+U0= 2.0
+V0= 0.0
+W0= 0.0
+DUDZ0= 0.0
+ZTURB= 100.0
+#MOMENTUM BC
+LLBC= STD
+LUBC= STD
+LLBC_SPECIAL= WALL_LAW  #SM_CUBES,DTM_DDFA,WALL_LAW,STD,IBM_DFA
+LUBC_SPECIAL= STD
+LLBC_U= DRC         #NEU,DRC,WLL
+LLBC_V= DRC
+LLBC_W= DRC
+LUBC_U= NEU
+LUBC_V= NEU
+LUBC_W= DRC
+DLBC_U= 0.0
+DLBC_V= 0.0
+DLBV_W= 0.0
+DUBC_U= 0.0
+DUBC_V= 0.0
+DUBC_W= 0.0
+#ROUGHNESS (FOR IC OR WALL_LAW)
+LBC_DZ0= 0.0000001
+DSPL_H= 0.0
+WALL_C= 0.5
+#IBM DFA
+TRIINTERFACE= '../surfaces/wavy_hill/wavy_hill.dat'
+LPS= T
+PHI_ROT= 0
+IT_LPS= 3
+NITER_F= 1
+#DRS MODEL (check specific parameters)
+DRSM= F
+
+#################################################################
+#OUTPUT
+VERBOSE= F
+PROFILE= T
+#STD OUTPUT
+WBASE= 1000
+C_CNT1= 100000
+C_CNT2= 100000 # Slice Frequency
+P_CNT3= 10000   #ta1_field
+C_CNT3= 10
+
+#SCALAR1
+SC1_INIT= 1.0
+DSC1DZ_INIT= 0.0
+NF_SC1= 0.01
+Z_TURB_SC1= 1.0
+Z_ENT_SC1= 1.0
+ENT_SC1_INIT= 0.0
+ENT_DSC1DZ_INIT= 0.034
+LLBC_SC1= 'DRC'
+LUBC_SC1= 'NEU'
+DLBC_SC1= 1.0
+DUBC_SC1= 0.0
+#SCALAR1
+SC2_INIT= 0.000001
+DSC2DZ_INIT= 0.0
+NF_SC2= 0.0000001
+Z_TURB_SC2= 1.0
+Z_ENT_SC2= 1.0
+ENT_SC2_INIT= 0.0
+ENT_DSC2DZ_INIT= -0.000001
+LLBC_SC2= 'NEU'
+LUBC_SC2= 'DRC'
+DLBC_SC2= 0.00000
+DUBC_SC2= 0.000
+
+################################################################
+#LSM
+LSM= T
+NP_MAX= 5000000 # Maximum number of particles 
+LSM_FREQ= 1 # Update frequency of the LSM model - time advancement 
+AVERAGE_FREQ= 100 # equal or smaller than LSM_INIT - time averaging of the LES field needed for LSM SGS dissipation
+PRINT1_FREQ= 100 # output of particle data every LSM steps - i.e every PRINT1_FREQ*LSM_FREQ "LES" timesteps
+LSM_INIT= 500000 # when the LSM algo is started - !!! NOTE - AVERAGE_FREQ < LSM_INIT !!!
+P_RHO= 910.0 # Density of particles in [kg/m3]
+D_M= 0.0002 #0.0002 # mean diameter [m]
+D_S= 0.0001 #0.0001 # std. deviation of particles [m]
+D_MIN= 0.00005 # bounds for min and max diameter 
+D_MAX= 0.002
+PPP_MIN= 1000 # particles per parcel minimum
+PPP_MAX= 1000 # particles per parcel maximum
+B_ENE= 1.E-10 # cohesion energy ( NOT needed for hot particles)
+R_DEP= F # read initial distribution pattern for particles - mostly not needed
+FILE_DEP= '' # path for the file for the initial distribution of particles
+INIT_DEP= 10000.0 # kg/m2
+MODE= "saltation" # possible: 'snowfall' / 'saltation' / 'point_release'
+OUTLET= F # 'F': periodic bc for particles / 'T' : particles disappear at the boundary
+PARTICLE_TYPE= "inertial" # possibility: 'passive' / 'inertial' : drag force + gravity / 'settling' : superimposed w velocity 
+SETTLING_VEL= 0.0 # set the settling velocity
+molec_weight_water= 0.018 # molecular weight of water [M mol^{-1}]
+R_universal= 8.314 # universal gas constant [J mol{-1} K{-1}]
+surface_tension= 0.0728 # surface tension between water and air interface
+water_rho= 910.0 # density of water
+c_p_a= 1006.0 # specific heat at constant pressure for air
+c_L= 2000.0 # specific heat capacity for ice ( taken at -10 C )
+c_p_v= 1952.0 # specific heat capacity for vapor
+sublimation= F
+Schiller= T
+Mason= F
+lp_conc= T
+lp_flux= T
+lp_stress= F
+lp_diss= F
+lp_massbal= T
+lp_restart= F
+lp_mombal= T
