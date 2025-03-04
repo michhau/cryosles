@@ -17,14 +17,17 @@ RUN apt-get install -y cmake pkg-config build-essential wget vim
 WORKDIR /home
 RUN mkdir -p /home/copied_stuff
 COPY ./libs/ /home/copied_stuff/
-COPY ./model/ /home/copied_stuff
+COPY ./model /home/copied_stuff
 
 #install Intel stuff
 RUN mkdir -p $CRYOSHOME
-WORKDIR $CRYOSHOME
-RUN cp -r /home/copied_stuff/intel . && sh ./intel/intel-oneapi-hpc-toolkit-2025.0.1.47_offline.sh -a --silent --cli --eula accept && sh ./intel/intel-oneapi-base-toolkit-2025.0.1.46_offline.sh -a --silent --cli --eula accept && rm -r intel/
+WORKDIR /home/copied_stuff
+RUN sh ./intel/intel-oneapi-hpc-toolkit-2025.0.1.47_offline.sh -a --silent --cli --eula accept && sh ./intel/intel-oneapi-base-toolkit-2025.0.1.46_offline.sh -a --silent --cli --eula accept && rm -r /home/copied_stuff/intel/
 #&& . /opt/intel/oneapi/setvars.sh
-RUN cp -r /home/copied_stuff/les-lsm-large_domain/* $CRYOSHOME
+
+#build model
+WORKDIR $CRYOSHOME
+RUN cp -r /home/copied_stuff/* $CRYOSHOME
 
 #compile the code
 RUN apt install -y makedepf90

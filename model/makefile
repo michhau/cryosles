@@ -86,63 +86,63 @@ ifeq ($(ARCH),PC_GNU)
   LIBS = $(LIBPATH) -lfftw3 
 endif
 
-#settings for PC with INTEL compiler (ifort)
+#settings for PC with INTEL compiler (ifx)
 ifeq ($(ARCH),PC_INTEL)
    ifeq ($(MPI),yes)
-      FC = mpiifort -DMPI
+      FC = mpiifx -DMPI
    else
-      FC = ifort
+      FC = ifx
    endif
-   FFLAGS = -fpp -O3 -mkl -assume byterecl -qopenmp -no-wrap-margin $(FPPF) -module $(MODDIR) -I$(OBJDIR)
-   #FFLAGS = -fpp -g -O0 -traceback -check bounds -assume byterecl -fpe0 -debug all -no-wrap-margin -mkl -openmp -module $(MODDIR) -I$(OBJDIR)
+   FFLAGS = -fpp -O3 -qmkl -assume byterecl -qopenmp -no-wrap-margin $(FPPF) -module $(MODDIR) -I$(OBJDIR)
+   #FFLAGS = -fpp -g -O0 -traceback -check bounds -assume byterecl -fpe0 -debug all -no-wrap-margin -qmkl -openmp -module $(MODDIR) -I$(OBJDIR)
    LDFLAGS = #-mcmodel medium
    LIBPATH = #-L/home/mg/Phd/libraries/bin_gfortran
-   LIBS = $(LIBPATH) #-mkl -lmkl_lapack95_lp64
+   LIBS = $(LIBPATH) #-qmkl -lmkl_lapack95_lp64
 endif
 
-#settings for ROSA with INTEL compiler (ifort)
+#settings for ROSA with INTEL compiler (ifx)
 ifeq ($(ARCH),DENEB_INTEL)
   ifeq ($(MPI),yes)
-    FC = mpiifort
+    FC = mpiifx
   else
-    FC = ifort
+    FC = ifx
   endif
-  FFLAGS = -fpp $(FPPF) -mkl -assume byterecl -O3 -qopenmp -module $(MODDIR) -I$(OBJDIR) -axSSE4.2 
+  FFLAGS = -fpp $(FPPF) -qmkl -assume byterecl -O3 -qopenmp -module $(MODDIR) -I$(OBJDIR) -axSSE4.2 
   #LDFLAGS = -mcmodel=medium
   LIBPATH = -L/ssoft/fftw/3.3.4/RH6/intel-15.0.0/x86_E5v2/intelmpi/lib
   LIBS = $(LIBPATH) -lfftw3 
 endif
 
 
-#settings for ROSA with INTEL compiler (ifort)
+#settings for ROSA with INTEL compiler (ifx)
 ifeq ($(ARCH),BELLATRIX_INTEL)
   ifeq ($(MPI),yes)
-    FC = mpiifort
+    FC = mpiifx
   else
-    FC = ifort
+    FC = ifx
   endif
-  FFLAGS = -fpp $(FPPF) -mkl -check bounds -traceback -assume byterecl -O3 -openmp -module $(MODDIR) -I$(OBJDIR) -axSSE4.2 
+  FFLAGS = -fpp $(FPPF) -qmkl -check bounds -traceback -assume byterecl -O3 -openmp -module $(MODDIR) -I$(OBJDIR) -axSSE4.2 
   #LDFLAGS = -mcmodel=medium
   LIBPATH = -L/ssoft/fftw/3.3.4/RH6/intel-15.0.0/x86_E5v2/intelmpi/lib
   LIBS = $(LIBPATH) -lfftw3 
 endif
 
-#settings for DORA with INTEL compiler (ifort)
+#settings for DORA with INTEL compiler (ifx)
 ifeq ($(ARCH),CSCS_INTEL)
   FC = ftn
   #FC = scorep --user --static ftn
-  FFLAGS = -fpp -O3 -assume byterecl -shared-intel -dynamic -mkl -qopenmp -no-wrap-margin $(FPPF) -module $(MODDIR) -I$(OBJDIR)
-  #FFLAGS = -fpp -g -O0 -traceback -assume byterecl -dynamic -check bounds -fpe0 -no-wrap-margin -mkl -qopenmp $(FPPF) -module $(MODDIR) -I$(OBJDIR) 
-  #FFLAGS = -fpp $(FPPF) -g -debug all -mkl -traceback -check bounds -assume byterecl -no-wrap-margin -qopenmp -dynamic -shared-intel -mcmodel=large -qopt-streaming-stores always -module $(MODDIR) -I$(OBJDIR)
+  FFLAGS = -fpp -O3 -assume byterecl -shared-intel -dynamic -qmkl -qopenmp -no-wrap-margin $(FPPF) -module $(MODDIR) -I$(OBJDIR)
+  #FFLAGS = -fpp -g -O0 -traceback -assume byterecl -dynamic -check bounds -fpe0 -no-wrap-margin -qmkl -qopenmp $(FPPF) -module $(MODDIR) -I$(OBJDIR) 
+  #FFLAGS = -fpp $(FPPF) -g -debug all -qmkl -traceback -check bounds -assume byterecl -no-wrap-margin -qopenmp -dynamic -shared-intel -mcmodel=large -qopt-streaming-stores always -module $(MODDIR) -I$(OBJDIR)
   LDFLAGS = 
   #LIBPATH = -L/opt/software/fftw/3.3.3/intel-intelmpi/13.0.1-4.1.0/lib
   LIBS = $(LIBPATH) #-lfftw3
 endif
 
-#settings for ROSA with INTEL compiler (ifort)
+#settings for ROSA with INTEL compiler (ifx)
 ifeq ($(ARCH),MAMMOUTH)
   FC = mpif90
-  FFLAGS = -fpp $(FPPF) -mkl -traceback -check bounds -assume byterecl -O3 -openmp -module $(MODDIR) -I$(OBJDIR)
+  FFLAGS = -fpp $(FPPF) -qmkl -traceback -check bounds -assume byterecl -O3 -openmp -module $(MODDIR) -I$(OBJDIR)
   #LDFLAGS = -mcmodel=medium
   #LIBPATH = -L/opt/software/fftw/3.3.3/intel-intelmpi/13.0.1-4.1.0/lib
   LIBS = $(LIBPATH) -lfftw3
