@@ -1,0 +1,32 @@
+SUBROUTINE UNPADD(CC,CC_BIG)
+
+USE TYPES, ONLY: RPREC
+USE PARAM, ONLY: LD,NX,NY,NY2,NZ,LH_BIG,LH
+
+IMPLICIT NONE
+
+INTEGER :: JX,JY
+
+!note that we're using 2d definitions here
+COMPLEX(RPREC),DIMENSION(LH_BIG,NY2),INTENT(IN) ::  CC_BIG
+COMPLEX(RPREC),DIMENSION(LH,NY),INTENT(OUT) :: CC
+
+!PUT BACK THE FIRST FREQUENCIES FROM 0 TO NX/2
+DO JY=1,NY/2
+DO JX=1,NX/2
+  CC(JX,JY)=CC_BIG(JX,JY)
+ENDDO
+ENDDO
+
+!kill the oddballs at level nx/2+1
+CC(NX/2+1,:)=0._RPREC
+CC(:,NY/2+1)=0._RPREC
+
+!put back the last part of dimention (nx/2-1) right after the oddball frequencies 
+DO JY=1,NY/2-1
+DO JX=1,NX/2
+  CC(JX,JY+NY/2+1) = CC_BIG(JX,JY+NY2-NY/2+1)
+ENDDO
+ENDDO
+
+END SUBROUTINE UNPADD

@@ -1,0 +1,281 @@
+module budget
+
+use types,only:rp=>rprec
+use param
+use sim_param
+use sp_sc1
+use sgsmodule,only:beta,cs_opt2,nu_t
+use deriv,only:ddz_uv
+
+implicit none
+
+logical,parameter :: Lbudget=.false.,         &
+                     LonlyImp=.false.      
+
+
+
+!##############################################################################
+contains
+
+
+!##################################################################################
+
+
+
+!!------------------------------------------------------------------------------
+!!  OBJECT: subroutine ComputeBudget()
+!!------------------------------------------------------------------------------
+!!
+!!  LAST CHECKED/MODIFIED: Marco Giometto ( mgiometto@gmail.com ), day 26/07/2014
+!!
+!!  DESCRIPTION:
+!!
+!!  This subroutine extracts the needed statistics for the KAT simulation
+!!  all data are interpolated in w nodes
+!!
+!!
+!!  Production is OK
+!!  Buoyancy production is also OK
+!!  Pressure transport is OK
+!!  Transport by molecular diffusion and turbulence is OK
+!!  Dissipation is OK
+!!  
+!!------------------------------------------------------------------------------
+subroutine ComputeBudget()
+
+implicit none
+
+integer :: i,j,k
+
+real(rp),dimension(ld,ny,0:nz) :: scr1,scr2,scr3  !scratch useful for interpolation
+character(256) :: fname
+logical,save :: init=.false.
+integer,save :: ii=1
+
+!write parameters to avg_field
+if((coord==0).and.(.not.init))then
+   print*,'writing parameters for budget'
+   write(fname,'(a)') trim(ta1_field)//'parameters.txt'
+   open(111,file=trim(fname),status='new')
+   write(111,*) nx
+   write(111,*) ny
+   write(111,*) nz_tot-1
+   write(111,*) l_x
+   write(111,*) l_y
+   write(111,*) l_z
+   write(111,*) nsteps/p_cnt3
+   write(111,*) nproc
+   write(111,*) Re
+   write(111,*) alpha
+   close(111)
+
+   !switch
+   init=.true.
+
+endif
+
+!mean vars on uvp nodes
+call avg_var(u,'u',ii)                                                            !vel
+call avg_var(v,'v',ii)
+call int_var(w,scr1); call avg_var(scr1,'w',ii)
+if(s_flag) call avg_var(sc1,'s',ii)
+
+call avg_var(u*u,'uu',ii)                                                        !res flux
+call avg_var(v*v,'vv',ii)
+call avg_var(scr1*scr1,'ww',ii)
+call avg_var(u*v,'uv',ii)
+call avg_var(scr1*u,'uw',ii)
+call avg_var(scr1*v,'vw',ii)
+if(s_flag) call avg_var(sc1*sc1,'ss',ii)    
+if(s_flag) call avg_var(u*sc1,'su',ii)    
+if(s_flag) call avg_var(v*sc1,'sv',ii)
+if(s_flag) call avg_var(scr1*sc1,'sw',ii)
+
+call avg_var(txx,'txx',ii)                                                      !sgs flux or dns stress
+call avg_var(tyy,'tyy',ii)
+call avg_var(tzz,'tzz',ii)
+call avg_var(txy,'txy',ii)
+call int_var(txz,scr1); call avg_var(scr1,'txz',ii)
+call int_var(tyz,scr1); call avg_var(scr1,'tyz',ii)
+if(s_flag) call avg_var(txsc1,'tsx',ii)
+if(s_flag) call avg_var(tysc1,'tsy',ii)
+if(s_flag) call int_var(tzsc1,scr1); call avg_var(scr1,'tsz',ii)
+
+call avg_var(dudx,'dudx',ii)                                                   !derivatives
+call avg_var(dudy,'dudy',ii)
+call int_var(dudz,scr1); call avg_var(scr1,'dudz',ii)
+call avg_var(dvdx,'dvdx',ii) 
+call avg_var(dvdy,'dvdy',ii)
+call int_var(dvdz,scr1); call avg_var(scr1,'dvdz',ii)
+call int_var(dwdx,scr1); call avg_var(scr1,'dwdx',ii) 
+call int_var(dwdy,scr1); call avg_var(scr1,'dwdy',ii)
+call avg_var(dwdz,'dwdz',ii)
+if(s_flag) call avg_var(dsc1dx,'dsdx',ii)
+if(s_flag) call avg_var(dsc1dy,'dsdy',ii)
+if(s_flag) call int_var(dsc1dz,scr1); call avg_var(scr1,'dsdz',ii)
+
+call int_var(w,scr1); call avg_var(u**2*scr1,'uuw',ii)                          !transp res
+call avg_var(v**2*scr1,'vvw',ii)
+call avg_var(scr1**3,'www',ii)
+call avg_var(scr1**2*u,'uww',ii)
+if(s_flag) call avg_var(scr1**2*sc1,'sww',ii)
+
+call avg_var(scr1*tzz,'wtzz',ii)                                               !transp sgs
+call int_var(txz,scr1); call avg_var(scr1*u,'utxz',ii)
+call int_var(tyz,scr2); call avg_var(scr2*v,'vtyz',ii)
+
+call avg_var(dudx*txx,'dxx',ii)                                                  !diss
+call avg_var(dvdy*tyy,'dyy',ii)
+call avg_var(dwdz*tzz,'dzz',ii)
+call avg_var(0.5_rp*(dudy+dvdx)*txy,'dxy',ii)
+call int_var(dudz+dwdx,scr2); call avg_var(0.5_rp*scr2*scr1,'dxz',ii)
+call int_var(dvdz+dwdy,scr2); call int_var(tyz,scr1); call avg_var(0.5*scr2*scr1,'dyz',ii)
+
+!second dissipation (to check)
+call avg_var((dudx**2+dudy**2+dudz**2),'dxx2',ii)                         !diss
+call avg_var((dvdx**2+dvdy**2+dvdz**2),'dyy2',ii)                         !diss
+call avg_var((dwdx**2+dwdy**2+dwdz**2),'dzz2',ii)                         !diss
+
+!momentum flux dissipation (to check)
+call avg_var((dudx*dwdx+dudy*dwdy+dudz*dwdz),'duw',ii)                     !diss (no interpolation see what happens)
+
+!buoyancy flux dissipation (to check)
+if(s_flag) call avg_var((dsc1dx*dwdx+dsc1dy*dwdy+dsc1dz*dwdz),'dsw',ii)    !diss (no interpolation see what happens)
+
+!pressure stuff (tranport+return to isotropy)
+do k=0,nz-1
+  scr1(:,:,k)=p(:,:,k)-0.5_rp*(u(:,:,k)**2+v(:,:,k)**2+(0.5_rp*(w(:,:,k)+w(:,:,k+1)))**2) 
+enddo
+scr1(:,:,nz)=scr1(:,:,nz-1)
+call avg_var(scr1,'p',ii)                                                  !cleaned pressure
+call int_var(w,scr2); call avg_var(scr1*scr2,'pw',ii)                      !pressure transp tke
+call avg_var(scr1*u,'pu',ii)                                               !pressure transp uw
+if(s_flag) call avg_var(scr1*sc1,'ps',ii)                                  !pressure transp ps
+
+call avg_var(dudx*scr1,'pdudx',ii)                                        !ret. isotropy 1
+call avg_var(dvdy*scr1,'pdvdy',ii)                                        !ret. isotropy 2
+call avg_var(dwdz*scr1,'pdwdz',ii)                                        !ret. isotropy 3
+call int_var(dudz,scr2); call avg_var(scr2*scr1,'pdudz',ii)               !ret. isotropy 4
+call int_var(dwdx,scr2); call avg_var(scr2*scr1,'pdwdx',ii)               !ret. isotropy 5
+if(s_flag) call int_var(dsc1dz,scr2); call avg_var(scr2*scr1,'pdsdz',ii)  !ret. isotropy 6
+
+!full pressure term
+call filt_da(scr1,scr2,scr3)
+call avg_var(scr2,'dpdx',ii)
+call avg_var(scr3,'dpdy',ii)
+call avg_var(u*scr2,'udpdx',ii)
+call avg_var(v*scr3,'vdpdy',ii)
+call ddz_uv(scr2,scr1)
+call avg_var(scr2,'dpdz',ii)
+call int_var(w*scr2,scr1); call avg_var(scr1,'wdpdz',ii)
+
+if(sgs)then
+    scr1(:,:,1:nz)=cs_opt2(:,:,:)
+    scr1(:,:,0)=BOGUS
+    call int_var(scr1,scr2); call avg_var(scr2,'cs',ii)                     !les stuff
+    call int_var(BETA,scr1); call avg_var(scr1,'beta',ii)
+    call int_var(NU_T,scr1); call avg_var(scr1,'nu_t',ii)
+
+    if(s_flag) scr1(:,:,1:nz)=ds_opt2_sc1(:,:,:)
+    if(s_flag) scr1(:,:,0)=scr1(:,:,1)   !this way I take care of the fact that Cs is defined in UVP in jz=1
+    if(s_flag) call int_var(scr1,scr2); call avg_var(scr2,'ds',ii)                     !les stuff 
+    if(s_flag) call int_var(BETA_SC1,scr1); call avg_var(scr1,'betas',ii)
+    if(s_flag) call int_var(NU_SC1,scr1); call avg_var(scr1,'nu_s',ii)
+endif
+
+!update record
+if(mod(jt,p_cnt3).eq.0)then
+   ii=ii+1
+endif
+
+
+end subroutine ComputeBudget
+
+
+!!------------------------------------------------------------------------------
+!!  OBJECT: subroutine avg_var()
+!!------------------------------------------------------------------------------
+!!
+!!  LAST CHECKED/MODIFIED: Marco Giometto ( mgiometto@gmail.com ), day 20/01/2014
+!!
+!!  DESCRIPTION:
+!!
+!!  This subroutine updates the value of the current variable
+!!
+!!------------------------------------------------------------------------------
+subroutine avg_var(v,str_v,ii)
+
+
+implicit none
+
+real(rp),dimension(ld,ny,0:nz),intent(in) :: v
+real(rp),dimension(nx,ny,1:nz-1) :: av
+character(*),intent(in) :: str_v
+integer,intent(in) :: ii
+character(128) :: fname
+logical :: Lexist
+integer :: n
+
+!counter
+n=p_cnt3/c_cnt3
+
+
+!update record of tmp file
+WRITE(fname,'(a,i0)') trim(ta1_field)//trim(str_v)//'_tmp.c',coord
+INQUIRE(FILE=trim(fname),EXIST=Lexist); 
+OPEN(11,FILE=trim(fname),STATUS='unknown',ACCESS='direct',RECL=8*nx*ny*(nz-1))
+IF(.not.Lexist)THEN
+   av=0.0_rp
+ELSE
+   READ(11,REC=1) av
+ENDIF
+WRITE(11,REC=1) av+v(1:nx,1:ny,1:nz-1)/n
+CLOSE(11)
+
+IF(MOD(jt,p_cnt3).EQ.0)THEN
+   !save to final file
+   WRITE(fname,'(a,i0)') trim(ta1_field)//trim(str_v)//'.c',coord
+   OPEN(12,FILE=trim(fname),STATUS='unknown',ACCESS='direct',RECL=8*nx*ny*(nz-1))
+   WRITE(12,REC=ii) av(1:nx,1:ny,1:nz-1)
+   CLOSE(12)
+   !remove tmp file
+   WRITE(fname,'(a,i0)') trim(ta1_field)//trim(str_v)//'_tmp.c',coord
+   OPEN(11,FILE=trim(fname),STATUS='unknown',ACCESS='direct',RECL=8*nx*ny*(nz-1))
+   CLOSE(11,STATUS='delete')
+endif
+
+
+end subroutine avg_var
+
+
+
+!!------------------------------------------------------------------------------
+!!  OBJECT: subroutine int_var()
+!!------------------------------------------------------------------------------
+!!
+!!  LAST CHECKED/MODIFIED: Marco Giometto ( mgiometto@gmail.com ), day 20/01/2014
+!!
+!!  DESCRIPTION:
+!!
+!!  This subroutine interpolates from w to uvp
+!!
+!!------------------------------------------------------------------------------
+subroutine int_var(v,iv)
+
+implicit none
+
+real(rp),dimension(ld,ny,0:nz),intent(in) :: v
+real(rp),dimension(ld,ny,0:nz),intent(out) :: iv
+integer :: k
+
+!inteprolate
+do k=1,nz-1
+   iv(:,:,k)=0.5_rp*(v(:,:,k)+v(:,:,k+1))
+enddo
+
+end subroutine int_var
+
+
+
+
+end module budget
