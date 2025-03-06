@@ -204,9 +204,9 @@ if((coord == proc_eddy_cov) .and. (jt == 1))then
   print*,'Creating folder and text file for eddy covariance sampling at z=', &
          z_eddy_cov,' m in the center of the domain...'
   result=system('mkdir '//trim(opath))
-  inquire(file=trim(opath)//'uwTq.txt', EXIST=file_exists)
+  inquire(file=trim(opath)//'uvwTq.txt', EXIST=file_exists)
   if(.not. file_exists) then  ! create file for high-frequency records
-    open(300,file=trim(opath)//'uwTq.txt',status='new')
+    open(300,file=trim(opath)//uvwTq.txt',status='new')
       if (TEMPERATURE .and. HUMIDITY) then
         write(300,'(a60)') "U(m/s)   V(m/s)   W(m/s)   T(K)   q(kg/kg)"
       elseif (TEMPERATURE) then
@@ -246,7 +246,7 @@ if (coord == proc_eddy_cov) then
     jz_eddy_cov = idnint( g_eddy_cov + 0.5_rprec ) - eta_displ(coord) ! height index for sampling
     ! average vertical velocities at the two w nodes surrounding the uvp node under consideration
     w_eddy_cov  = ( w(nx/2,ny/2,jz_eddy_cov) + w(nx/2,ny/2,jz_eddy_cov+1) ) / 2
-    open(300,file=trim(opath)//'uwTq.txt',status='old',position='append')
+    open(300,file=trim(opath)//'uvwTq.txt',status='old',position='append')
     if (TEMPERATURE .and. HUMIDITY) then
       write(300,'(4(1x,f11.6),(1x,f12.9))') u(nx/2,ny/2,jz_eddy_cov), &
             v(nx/2,ny/2,jz_eddy_cov), &
