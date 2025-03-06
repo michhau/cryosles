@@ -208,13 +208,13 @@ if((coord == proc_eddy_cov) .and. (jt == 1))then
   if(.not. file_exists) then  ! create file for high-frequency records
     open(300,file=trim(opath)//'uwTq.txt',status='new')
       if (TEMPERATURE .and. HUMIDITY) then
-        write(300,'(a50)') "U(m/s)   W(m/s)   T(K)   q(kg/kg)"
+        write(300,'(a60)') "U(m/s)   V(m/s)   W(m/s)   T(K)   q(kg/kg)"
       elseif (TEMPERATURE) then
-        write(300,'(a40)') "U(m/s)   W(m/s)   T(K)"
+        write(300,'(a50)') "U(m/s)   V(m/s)   W(m/s)   T(K)"
       elseif (HUMIDITY) then
-        write(300,'(a40)') "U(m/s)   W(m/s)   q(kg/kg)"
+        write(300,'(a50)') "U(m/s)   V(m/s)   W(m/s)   q(kg/kg)"
       else
-        write(300,'(a30)') "U(m/s)   W(m/s)"
+        write(300,'(a40)') "U(m/s)   V(m/s)   W(m/s)"
       endif
     close(300)
   endif
@@ -248,17 +248,21 @@ if (coord == proc_eddy_cov) then
     w_eddy_cov  = ( w(nx/2,ny/2,jz_eddy_cov) + w(nx/2,ny/2,jz_eddy_cov+1) ) / 2
     open(300,file=trim(opath)//'uwTq.txt',status='old',position='append')
     if (TEMPERATURE .and. HUMIDITY) then
-      write(300,'(3(1x,f11.6),(1x,f12.9))') u(nx/2,ny/2,jz_eddy_cov), &
+      write(300,'(4(1x,f11.6),(1x,f12.9))') u(nx/2,ny/2,jz_eddy_cov), &
+            v(nx/2,ny/2,jz_eddy_cov), &
             w_eddy_cov, sc1(nx/2,ny/2,jz_eddy_cov)*t_scale, &
             sc2(nx/2,ny/2,jz_eddy_cov)
     elseif (TEMPERATURE) then
-      write(300,'(3(1x,f11.6))') u(nx/2,ny/2,jz_eddy_cov), w_eddy_cov, &
+      write(300,'(4(1x,f11.6))') u(nx/2,ny/2,jz_eddy_cov), w_eddy_cov, &
+            v(nx/2,ny/2,jz_eddy_cov), &
             sc1(nx/2,ny/2,jz_eddy_cov)*t_scale
     elseif (HUMIDITY) then
-      write(300,'(2(1x,f11.6),(1x,f12.9))') u(nx/2,ny/2,jz_eddy_cov), &
+      write(300,'(3(1x,f11.6),(1x,f12.9))') u(nx/2,ny/2,jz_eddy_cov), &
+            v(nx/2,ny/2,jz_eddy_cov), &
             w_eddy_cov, sc2(nx/2,ny/2,jz_eddy_cov)
     else
-      write(300,'(2(1x,f11.6))') u(nx/2,ny/2,jz_eddy_cov), w_eddy_cov
+      write(300,'(3(1x,f11.6))') u(nx/2,ny/2,jz_eddy_cov), &
+            v(nx/2,ny/2,jz_eddy_cov), w_eddy_cov
     endif
     close(300)
   endif

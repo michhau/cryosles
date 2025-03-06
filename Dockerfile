@@ -23,7 +23,7 @@ COPY ./model /home/copied_stuff
 RUN mkdir -p $CRYOSHOME
 WORKDIR /home/copied_stuff
 RUN sh ./intel/intel-oneapi-hpc-toolkit-2025.0.1.47_offline.sh -a --silent --cli --eula accept && sh ./intel/intel-oneapi-base-toolkit-2025.0.1.46_offline.sh -a --silent --cli --eula accept && rm -r /home/copied_stuff/intel/
-#&& . /opt/intel/oneapi/setvars.sh
+#RUN . /opt/intel/oneapi/setvars.sh
 
 #build model
 WORKDIR $CRYOSHOME
@@ -31,18 +31,3 @@ RUN cp -r /home/copied_stuff/* $CRYOSHOME
 
 #compile the code
 RUN apt install -y makedepf90
-
-
-#create directory where palm_exchange folder gets mapped
-#RUN mkdir $INSTALLFOLDER/JOBS
-#WORKDIR $INSTALLFOLDER
-#RUN mkdir -p $INSTALLFOLDER/JOBS/example_cbl && cp -r /home/palmuser/jobtocopy/* $INSTALLFOLDER/JOBS/example_cbl
-#cp -r $PALMFOLDER/packages/palm/model/tests/cases/example_cbl $INSTALLFOLDER/JOBS
-
-#do PALM stuff
-#RUN $INSTALLFOLDER/bin/palmrun -b -a "d3#" -r example_cbl -q medium -X 256 -T 64 -t 1800 -m 60000 -v -F
-#RUN $INSTALLFOLDER/bin/palmrun -r example_cbl -c default -m 60000 -t 1800 -q medium -i 16683 -U root -a "d3#" -G "PALM 24.04" -X 2 -T 2 -B -v
-#RUN mv $INSTALLFOLDER/tmp/example_cbl* $INSTALLFOLDER/tmp/job_cscs
-#WORKDIR $INSTALLFOLDER/tmp/job_cscs
-#RUN rm -r *.f90 && rm -r *.mod && rm -r *.o && rm -r *.c && rm -r *.tar
-#RUN chmod +x jobfile.*

@@ -93,10 +93,11 @@ real(rprec) :: get_eta_local
 !get_eta_local = 1.1562086656966579_rprec*(9.636779865654959_rprec + 88.70725986325656_rprec*(i) - sqrt(92.86752617909338_rprec - 672.7383457534048_rprec*(i) + 7101.752602083714_rprec*(i)*(i)))
 !get_eta_local = 5.637555837147649_rprec*(3.367831612972066_rprec + 17.977888694869334_rprec*(i) - sqrt(11.342289773333995_rprec - 78.63221637707105_rprec*(i) + 306.19674385402926_rprec*(i)*(i)))
 ! for domain height of 18.317655 m and NZ_tot = 193:
-get_eta_local = 162823600_rprec/4379319_rprec*(i) + 45.5963426738067_rprec - sqrt(992.650706509249_rprec*(i)*(i) - 2691.39679378331_rprec*(i) + 2079.02646522722_rprec)
+!get_eta_local = 162823600_rprec/4379319_rprec*(i) + 45.5963426738067_rprec - sqrt(992.650706509249_rprec*(i)*(i) - 2691.39679378331_rprec*(i) + 2079.02646522722_rprec)
 ! for domain height of 6.4 m and NZ_tot = 129:
 !get_eta_local = 4.174150902928559_rprec*(7.22783801679223_rprec + 13.30942671875569_rprec*(i) - sqrt(52.241642396986944_rprec - 138.07086947692574_rprec*(i) + 113.37013733243383_rprec*(i)*(i)))
 !get_eta_local = 1.9649756542092672_rprec*(16.29776532602988_rprec + 5.219611873785569_rprec*(i) - 1.000000_rprec*sqrt(265.61715462234242_rprec - 153.31078467741929_rprec*(i) + 24.588024171949374_rprec*(i*i)))
+get_eta_local = 20.371837_rprec*(i)
 end function get_eta_local
 
 end module stretch
