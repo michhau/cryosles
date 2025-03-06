@@ -4,4 +4,4 @@ ulimit -s unlimited
 
 export OMP_NUM_THREADS=2
 
-nohup mpirun -np 8 ./program.exe &
+nohup mpirun -np 16 ./program.exe &
