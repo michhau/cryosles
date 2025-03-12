@@ -85,7 +85,7 @@ DRSM= F
 VERBOSE= F 
 PROFILE= T
 #STD OUTPUT
-WBASE= 2000 #1000 # frequency for average ustar, mean vertical profiles, etc.
+WBASE= 500 #1000 # frequency for average ustar, mean vertical profiles, etc.
 C_CNT1= 100000 #100000000 #100000 # frequency for instantaneous field
 C_CNT2= 100000 #100000000 #100000 # instantaneous slice frequency (3 xz-, 3 yz-, 1 xy-slices per process)
 P_CNT3= 100000 #50000 #100000  #ta1 field

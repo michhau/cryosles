@@ -206,7 +206,7 @@ if((coord == proc_eddy_cov) .and. (jt == 1))then
   result=system('mkdir '//trim(opath))
   inquire(file=trim(opath)//'uvwTq.txt', EXIST=file_exists)
   if(.not. file_exists) then  ! create file for high-frequency records
-    open(300,file=trim(opath)//uvwTq.txt',status='new')
+    open(300,file=trim(opath)//'uvwTq.txt',status='new')
       if (TEMPERATURE .and. HUMIDITY) then
         write(300,'(a60)') "U(m/s)   V(m/s)   W(m/s)   T(K)   q(kg/kg)"
       elseif (TEMPERATURE) then
