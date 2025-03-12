@@ -1,2 +1,3 @@
 libs/intel/*
-data/
+data/*
+compiled/
