@@ -1,0 +1,16 @@
+Input file containing information on the surface heterogeneity
+(used in combination with 'patches.in')
+DO NOT add or remove lines. Keep the spaces like NAME= $Value
+author: Michael Haugeneder, 25.03.2025
+
+#--------------------------------------------------
+#Surface type '0' in patches.in (e.g. bare ground)
+MODE_0= 1 #1=same for all pixels, e.g. 2(not yet implemented)=gaussian
+T_0= 293.15 #temperature of pixel [K]
+Z0_0= 0.005 #aerodynamic roughness length [m]
+
+#--------------------------------------------------
+#Surface type '1' in patches.in (e.g. snow)
+MODE_1= 1 #1=same for all pixels, e.g. 2(not yet implemented)=gaussian
+T_1= 273.15 #temperature of pixel [K]
+Z0_1= 0.01 #aerodynamic roughness length [m]

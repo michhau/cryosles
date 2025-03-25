@@ -952,7 +952,7 @@ END SUBROUTINE BILIN_INTERP
 !!
 !!  DESCRIPTION:
 !!
-!!  Reads from external file the parameters for the actualy simulation
+!!  Reads from external file the parameters for the actual simulation
 !!
 !!-------------------------------------------------------------------------------
 SUBROUTINE READ_PARAM(FILENAME)
@@ -1214,6 +1214,61 @@ end if
 
 END SUBROUTINE READ_PARAM
 
+
+
+!!-------------------------------------------------------------------------------
+!!  OBJECT: subroutine READ_HETERO_SRF_PROPS()
+!!-------------------------------------------------------------------------------
+!!
+!!  LAST CHECKED/MODIFIED: Michi Haugeneder ( michael.haugeneder@gmx.de ) on 25/03/2025
+!!
+!!  DESCRIPTION:
+!!
+!!  Reads from file the surface heterogeneity properties
+!!
+!!-------------------------------------------------------------------------------
+SUBROUTINE READ_HETERO_SRF_PROPS(FILENAME)
+
+   IMPLICIT NONE
+   
+   CHARACTER(*),INTENT(IN) :: FILENAME
+   CHARACTER(1) :: H
+   
+   IF(COORD==0) PRINT*,'READING PARAMETERS FOR HETEROGENEOUS SURFACES...'
+   
+   OPEN(112,FILE=TRIM(FILENAME),STATUS='OLD')
+   READ(112,*) 
+   READ(112,*) 
+   READ(112,*) 
+   READ(112,*) 
+   READ(112,*) 
+   READ(112,*) 
+   READ(112,*) 
+   READ(112,*) H,MODE_0
+   READ(112,*) H,T_0
+   READ(112,*) H,Z0_0
+   READ(112,*)
+   READ(112,*) 
+   READ(112,*) 
+   READ(112,*) H,MODE_1
+   READ(112,*) H,T_1
+   READ(112,*) H,Z0_1
+   CLOSE(112)
+   
+   if ((.not. USE_MPI) .or. (USE_MPI .and. coord == 0)) then
+   !SCREEN
+   PRINT*,'MODE_0=',MODE_0
+   PRINT*,'T_0=',T_0
+   PRINT*,'Z0_0=',Z0_0   
+   PRINT*,'----------------'
+   PRINT*,'MODE_1=',MODE_1
+   PRINT*,'T_1=',T_1
+   PRINT*,'Z0_1=',Z0_1   
+   PRINT*,'----------------'
+   PRINT*,'----------------'
+   end if
+   
+END SUBROUTINE READ_HETERO_SRF_PROPS
 
 
 !!--------------------------------------------------------------------------------
