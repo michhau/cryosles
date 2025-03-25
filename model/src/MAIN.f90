@@ -182,12 +182,19 @@ write(out_path,'(a,i0,a)') './output_',colour,'/'
 if(coord==0) result=system('mkdir '//trim(out_path))
 
 write(filename,'(a,i0)') './PARAMETERS.py_',colour
-write(filename_hetero,'(a)') 'hetero_srf_params.in'
+write(filename_patches,'(a)') './patches.in'
+write(filename_hetero,'(a)') './hetero_srf_params.in'
 !read parames from ext. file
 call read_param(filename)
+!read patches from file
+LOGICAL :: PATCHES(NX, NY)
+call read_patches(filename_patches, NX, NY, PATCHES)
 !read surface heterogeneity parameters
-call read_hetero_srf_props(hetero_filename)
+call read_hetero_srf_props(filename_hetero)
 call mpi_barrier(comm,ierr)
+
+!check if size of patches-array matches grid setup
+if(coord==0)
 
 !allocation
 CALL ALLOC_SIM_PARAM()
