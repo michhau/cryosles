@@ -29,6 +29,8 @@ REAL(RPREC),DIMENSION(:,:),INTENT(INOUT) :: LBC_ZO
 
 LBC_ZO=LBC_DZ0
 
+!!!xxxnew implementation for roughness length for heterogeneous surfaces
+
 !LBC_ZO(16:48,:) = LBC_DZ0 * 10.0_rprec
  
 END SUBROUTINE SET_LBC_ZO
@@ -264,6 +266,8 @@ ELSEIF(SCALAR.EQ.2)THEN
    IF(LLBC_SC2.EQ.'NEU') LBC_SC=DLBC_SC2
    IF(LLBC_SC2.EQ.'FLX') LBC_SC=DLBC_SC2
 ENDIF
+
+!xxximplement LBC for temperature here for heterogeneous surfaces
 
 IF(VERBOSE) WRITE (*,*) 'OUT COMPUTE_LBC_SC'
 
