@@ -1221,20 +1221,120 @@ END SUBROUTINE READ_PARAM
 !!-------------------------------------------------------------------------------
 !!
 !!  LAST CHECKED/MODIFIED: Michi Haugeneder ( michael.haugeneder@gmx.de ) on 25/03/2025
+!!  initial version written by Claude.AI
+!!
+!!  DESCRIPTION:
+!!
+!!  Reads patch distribution from file, Throws an error, if dimensions of
+!!  patches-file and grid do not match
+!!
+!!-------------------------------------------------------------------------------
+SUBROUTINE READ_PATCHES(FILENAME, NX, NY, PATCHES)
+   IMPLICIT NONE
+   
+   ! Input variables
+   CHARACTER(LEN=*), INTENT(IN) :: FILENAME
+   INTEGER, INTENT(IN) :: NX, NY
+   
+   ! Output variable
+   LOGICAL, INTENT(OUT) :: PATCHES(NX,NY)
+   
+   ! Local variables
+   INTEGER :: IO_STATUS, I, J
+   INTEGER :: FILE_NX, FILE_NY
+   INTEGER :: TMP_VALUES(NY)
+
+   IF(COORD==0) PRINT*,'Reading patches...'
+   
+   ! Open the file
+   OPEN(UNIT=10, FILE=FILENAME, STATUS='OLD', ACTION='READ', IOSTAT=IO_STATUS)
+   
+   ! Check if file opened successfully
+   IF (IO_STATUS /= 0) THEN
+     PRINT *, 'ERROR: Unable to open file ', TRIM(FILENAME)
+     STOP
+   END IF
+
+   ! Read dimensions from file
+   READ(10, *, IOSTAT=IO_STATUS) FILE_NX, FILE_NY
+   
+   ! Check if dimensions were read successfully
+   IF (IO_STATUS /= 0) THEN
+     PRINT *, 'ERROR: Unable to read dimensions from file'
+     CLOSE(10)
+     STOP
+   END IF
+   
+   ! Verify dimensions match
+   IF (FILE_NX /= NX .OR. FILE_NY /= NY) THEN
+     PRINT *, 'ERROR: Dimension mismatch'
+     PRINT *, 'Expected dimensions: ', NX, NY
+     PRINT *, 'File dimensions:     ', FILE_NX, FILE_NY
+     CLOSE(10)
+     STOP
+   END IF
+   
+   ! Read the boolean values with list-directed input
+   DO I = 1, NX
+     ! Read entire line of integers
+     READ(10, *, IOSTAT=IO_STATUS, END=100, ERR=200) (TMP_VALUES(J), J=1,NY)
+     
+     ! Convert to logical
+     DO J = 1, NY
+       PATCHES(I,J) = (TMP_VALUES(J) /= 0)
+     END DO
+   END DO
+   
+   ! Close the file
+   CLOSE(10)
+   IF(COORD==0) PRINT*,'Reading patches done. Patches are'
+   IF(COORD==0) THEN
+      ! Print the read-in array as 0/1
+      DO I = 1, NX
+         DO J = 1, NY
+           ! Print 1 for true, 0 for false
+           WRITE(*, '(I1)', ADVANCE='NO') MERGE(1, 0, PATCHES(I,J))
+         END DO
+         ! New line after each row
+         WRITE(*, *)
+       END DO
+   ENDIF
+   RETURN
+   
+   ! End of file handler
+100   CONTINUE
+   PRINT *, 'ERROR: Unexpected end of file at row ', I
+   CLOSE(10)
+   STOP
+   
+   ! Read error handler
+200   CONTINUE
+   PRINT *, 'ERROR: Unable to read values at row ', I
+   PRINT *, 'IO_STATUS: ', IO_STATUS
+   CLOSE(10)
+   STOP
+ END SUBROUTINE READ_PATCHES
+
+
+!!-------------------------------------------------------------------------------
+!!  OBJECT: subroutine READ_HETERO_SRF_PROPS()
+!!-------------------------------------------------------------------------------
+!!
+!!  LAST CHECKED/MODIFIED: Michi Haugeneder ( michael.haugeneder@gmx.de ) on 25/03/2025
 !!
 !!  DESCRIPTION:
 !!
 !!  Reads from file the surface heterogeneity properties
 !!
 !!-------------------------------------------------------------------------------
-SUBROUTINE READ_HETERO_SRF_PROPS(FILENAME)
+ SUBROUTINE READ_HETERO_SRF_PROPS(FILENAME)
 
    IMPLICIT NONE
    
    CHARACTER(*),INTENT(IN) :: FILENAME
    CHARACTER(1) :: H
    
-   IF(COORD==0) PRINT*,'READING PARAMETERS FOR HETEROGENEOUS SURFACES...'
+   IF(COORD==0) PRINT*,'Reading parameters for heterogeneous surfaces...'
    
    OPEN(112,FILE=TRIM(FILENAME),STATUS='OLD')
    READ(112,*) 
@@ -1266,88 +1366,11 @@ SUBROUTINE READ_HETERO_SRF_PROPS(FILENAME)
    PRINT*,'Z0_1=',Z0_1   
    PRINT*,'----------------'
    PRINT*,'----------------'
+   PRINT*,'Reading parameters for heterogeneous surfaces done.'
    end if
    
 END SUBROUTINE READ_HETERO_SRF_PROPS
 
-
-
-!!-------------------------------------------------------------------------------
-!!  OBJECT: subroutine READ_HETERO_SRF_PROPS()
-!!-------------------------------------------------------------------------------
-!!
-!!  LAST CHECKED/MODIFIED: Michi Haugeneder ( michael.haugeneder@gmx.de ) on 25/03/2025
-!!  initial version written by Claude.AI
-!!
-!!  DESCRIPTION:
-!!
-!!  Reads patch distribution from file, Throws an error, if dimensions of
-!!  patches-file and grid do not match
-!!
-!!-------------------------------------------------------------------------------
-SUBROUTINE READ_PATCHES(FILENAME, NX, NY, PATCHES)
-   IMPLICIT NONE
-   
-   ! Input variables
-   CHARACTER(LEN=*), INTENT(IN) :: FILENAME
-   INTEGER, INTENT(IN) :: NX, NY
-   
-   ! Output variable
-   LOGICAL, INTENT(OUT) :: PATCHES(NX,NY)
-   
-   ! Local variables
-   INTEGER :: IO_STATUS, I, J
-   INTEGER :: FILE_NX, FILE_NY
-   INTEGER :: TEMP_VALUE
-   
-   ! Open the file
-   OPEN(UNIT=10, FILE=FILENAME, STATUS='OLD', ACTION='READ', IOSTAT=IO_STATUS)
-   
-   ! Check if file opened successfully
-   IF (IO_STATUS /= 0) THEN
-     PRINT *, 'ERROR: Unable to open file ', TRIM(FILENAME)
-     STOP
-   END IF
-   
-   ! Read dimensions from file
-   READ(10, *, IOSTAT=IO_STATUS) FILE_NX, FILE_NY
-   
-   ! Check if dimensions were read successfully
-   IF (IO_STATUS /= 0) THEN
-     PRINT *, 'ERROR: Unable to read dimensions from file'
-     CLOSE(10)
-     STOP
-   END IF
-   
-   ! Verify dimensions match
-   IF (FILE_NX /= NX .OR. FILE_NY /= NY) THEN
-     PRINT *, 'ERROR: Dimension mismatch'
-     PRINT *, 'Expected dimensions: ', NX, NY
-     PRINT *, 'File dimensions:     ', FILE_NX, FILE_NY
-     CLOSE(10)
-     STOP
-   END IF
-   
-   ! Read the boolean values
-   DO I = 1, NX
-     DO J = 1, NY
-       READ(10, *, IOSTAT=IO_STATUS) TEMP_VALUE
-       
-       ! Check if value was read successfully
-       IF (IO_STATUS /= 0) THEN
-         PRINT *, 'ERROR: Unable to read value at position (', I, ',', J, ')'
-         CLOSE(10)
-         STOP
-       END IF
-       
-       ! Convert integer to logical
-       PATCHES(I,J) = (TEMP_VALUE /= 0)
-     END DO
-   END DO
-   
-   ! Close the file
-   CLOSE(10)
- END SUBROUTINE READ_PATCHES
 
 
 !!--------------------------------------------------------------------------------

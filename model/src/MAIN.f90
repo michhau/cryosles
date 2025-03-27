@@ -83,7 +83,7 @@ IMPLICIT NONE
 INTEGER :: IP_MAIN, MPI_NP, COORDS(1), KKK(1)
 INTEGER :: JX,JY,JZ
 INTEGER :: ITER,RESULT
-CHARACTER(256) :: HEADERS,PHI_FILE,SRF_FILE,sscr1,sscr2,filename
+CHARACTER(256) :: HEADERS,PHI_FILE,SRF_FILE,sscr1,sscr2,filename, filename_hetero, filename_patches
 LOGICAL :: CHECK
 REAL(RPREC) :: SCR1,SCR2,P1,P2,P1mom
 REAL(RPREC) :: T1,T2,T3,T4,T5,T6
@@ -96,6 +96,7 @@ integer :: second_comm,second_colour,second_rank
 real(rprec),dimension(3,3,3) :: hehe,tmp_hehe
 integer :: mpi_blend
 real(rprec) :: rand_num
+LOGICAL :: PATCHES(NX, NY)
 
 call mpi_init (ierr)
 call mpi_comm_size (MPI_COMM_WORLD, mpi_np, ierr)
@@ -181,20 +182,18 @@ write(out_path,'(a,i0,a)') './output_',colour,'/'
 !generate main output folder
 if(coord==0) result=system('mkdir '//trim(out_path))
 
+call mpi_barrier(comm,ierr)
+
 write(filename,'(a,i0)') './PARAMETERS.py_',colour
 write(filename_patches,'(a)') './patches.in'
-write(filename_hetero,'(a)') './hetero_srf_params.in'
+write(filename_hetero,'(a)') './hetero_srf_props.in'
 !read parames from ext. file
 call read_param(filename)
 !read patches from file
-LOGICAL :: PATCHES(NX, NY)
 call read_patches(filename_patches, NX, NY, PATCHES)
 !read surface heterogeneity parameters
 call read_hetero_srf_props(filename_hetero)
 call mpi_barrier(comm,ierr)
-
-!check if size of patches-array matches grid setup
-if(coord==0)
 
 !allocation
 CALL ALLOC_SIM_PARAM()
