@@ -182,8 +182,6 @@ write(out_path,'(a,i0,a)') './output_',colour,'/'
 !generate main output folder
 if(coord==0) result=system('mkdir '//trim(out_path))
 
-call mpi_barrier(comm,ierr)
-
 write(filename,'(a,i0)') './PARAMETERS.py_',colour
 write(filename_patches,'(a)') './patches.in'
 write(filename_hetero,'(a)') './hetero_srf_props.in'
