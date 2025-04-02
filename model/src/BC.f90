@@ -64,6 +64,60 @@ END SUBROUTINE SET_LBC_SC_ZO
 
 
 !!--------------------------------------------------------------------------------
+!!  OBJECT: SUBROUTINE SET_LBC_SC_ZO_HETERO()
+!!--------------------------------------------------------------------------------
+!!
+!!  LAST CHECKED/MODIFIED: Michi Haugeneder 02.04.2025
+!!
+!!  Set lower BC for Z0 for heterogeneous surfaces
+!!
+!!--------------------------------------------------------------------------------
+SUBROUTINE SET_LBC_SC_ZO_HETERO(LBC_SC_ZO, PATCHES, NX, NY, Z0_0, Z0_1)
+   IMPLICIT NONE
+   
+   ! Input variables
+   INTEGER, INTENT(IN) :: NX, NY
+   LOGICAL, INTENT(IN) :: PATCHES(NX,NY)
+   REAL(RPREC), INTENT(IN) :: Z0_0      ! Value for false elements
+   REAL(RPREC), INTENT(IN) :: Z0_1      ! Value for true elements
+   
+   ! Output variable
+   REAL(RPREC),DIMENSION(:,:),INTENT(OUT) :: LBC_SC_ZO
+   
+   ! Local variables
+   INTEGER :: I, J
+   
+   ! Set the bottom boundary condition with periodic extension
+   DO J = 1, NY
+     ! First column of LBC_SC_ZO gets the last column of PATCHES
+     IF (PATCHES(NX,J)) THEN
+       LBC_SC_ZO(1,J) = Z0_1
+     ELSE
+       LBC_SC_ZO(1,J) = Z0_0
+     END IF
+     
+     ! Middle columns of LBC_SC_ZO get the original PATCHES values
+     DO I = 1, NX
+       IF (PATCHES(I,J)) THEN
+         LBC_SC_ZO(I+1,J) = Z0_1
+       ELSE
+         LBC_SC_ZO(I+1,J) = Z0_0
+       END IF
+     END DO
+     
+     ! Last column of LBC_SC_ZO gets the first column of PATCHES
+     IF (PATCHES(1,J)) THEN
+       LBC_SC_ZO(NX+2,J) = Z0_1
+     ELSE
+       LBC_SC_ZO(NX+2,J) = Z0_0
+     END IF
+   END DO
+   
+ END SUBROUTINE SET_LBC_SC_ZO_HETERO
+
+
+
+!!--------------------------------------------------------------------------------
 !!  OBJECT: SUBROUTINE SET_INLET(U,V,W,BC_INLET,U_REF,Z_REF,ALPHA)
 !!--------------------------------------------------------------------------------
 !!
@@ -272,6 +326,60 @@ ENDIF
 IF(VERBOSE) WRITE (*,*) 'OUT COMPUTE_LBC_SC'
 
 END SUBROUTINE COMPUTE_LBC_SC
+
+
+
+!!--------------------------------------------------------------------------------
+!!  OBJECT: SUBROUTINE COMPUTE_LBC_SC_HETERO()
+!!--------------------------------------------------------------------------------
+!!
+!!  LAST CHECKED/MODIFIED: Michi Haugeneder 02.04.2025
+!!
+!!  Set lower BC for temperature (SC) for heterogeneous surfaces
+!!
+!!--------------------------------------------------------------------------------
+SUBROUTINE COMPUTE_LBC_SC_HETERO(LBC_SC, PATCHES, NX, NY, T_0, T_1)
+   IMPLICIT NONE
+   
+   ! Input variables
+   INTEGER, INTENT(IN) :: NX, NY
+   LOGICAL, INTENT(IN) :: PATCHES(NX,NY)
+   REAL(RPREC), INTENT(IN) :: T_0      ! Value for false elements
+   REAL(RPREC), INTENT(IN) :: T_1      ! Value for true elements
+   
+   ! Output variable
+   REAL(RPREC),DIMENSION(:,:),INTENT(OUT) :: LBC_SC
+   
+   ! Local variables
+   INTEGER :: I, J
+   
+   ! Set the bottom boundary condition with periodic extension
+   DO J = 1, NY
+     ! First column of LBC_SC gets the last column of PATCHES
+     IF (PATCHES(NX,J)) THEN
+       LBC_SC(1,J) = T_1
+     ELSE
+       LBC_SC(1,J) = T_0
+     END IF
+     
+     ! Middle columns of LBC_SC get the original PATCHES values
+     DO I = 1, NX
+       IF (PATCHES(I,J)) THEN
+         LBC_SC(I+1,J) = T_1
+       ELSE
+         LBC_SC(I+1,J) = T_0
+       END IF
+     END DO
+     
+     ! Last column of LBC_SC gets the first column of PATCHES
+     IF (PATCHES(1,J)) THEN
+       LBC_SC(NX+2,J) = T_1
+     ELSE
+       LBC_SC(NX+2,J) = T_0
+     END IF
+   END DO
+   
+ END SUBROUTINE COMPUTE_LBC_SC_HETERO
 
 
 
