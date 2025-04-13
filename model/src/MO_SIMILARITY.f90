@@ -64,7 +64,7 @@ ENDIF
     PSI_H=0.0_rprec
     PHI_H=1.0_rprec
     IF(trim(LLBC_SC1) .eq. 'DRC') then
-      SC1_STAR(:,:)=-1.0_rprec * VONK*(DLBC_SC1-SC1_AVG(:,:))/DLOG(z_local/LBC_SC1_ZO(:,:))
+      SC1_STAR(:,:)=-1.0_rprec * VONK*(LBC_SC1(:,:)-SC1_AVG(:,:))/DLOG(z_local/LBC_SC1_ZO(:,:))
     ENDIF
  
     IF(trim(LLBC_SC1) .eq. 'NEU') then
@@ -105,7 +105,7 @@ ENDIF
 ! 
 !    IF(TEMPERATURE) THEN
 !      IF(trim(LLBC_SC1) .eq. 'DRC') then
-!        SC1_STAR(:,:) = -1.0_rprec * VONK*(DLBC_SC1-SC1_AVG(:,:))/(DLOG(z_local/LBC_SC1_ZO(:,:))+PSI_H(:,:))
+!        SC1_STAR(:,:) = -1.0_rprec * VONK*(LBC_SC1(:,:)-SC1_AVG(:,:))/(DLOG(z_local/LBC_SC1_ZO(:,:))+PSI_H(:,:))
 !      ENDIF
 !      IF(trim(LLBC_SC1) .eq. 'NEU') then
 !        SC1_STAR(:,:) = DLBC_SC1/USTAR_AVG(:,:)
