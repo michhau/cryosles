@@ -352,30 +352,35 @@ SUBROUTINE COMPUTE_LBC_SC_HETERO(LBC_SC, PATCHES, NX, NY, T_0, T_1)
    
    ! Local variables
    INTEGER :: I, J
+   REAL(RPREC) :: T_0_NORM, T_1_NORM
+   
+   ! Normalize the temperature values by dividing by T_SCALE
+   T_0_NORM = T_0 / T_SCALE
+   T_1_NORM = T_1 / T_SCALE
    
    ! Set the bottom boundary condition with periodic extension
    DO J = 1, NY
      ! First column of LBC_SC gets the last column of PATCHES
      IF (PATCHES(NX,J)) THEN
-       LBC_SC(1,J) = T_1
+       LBC_SC(1,J) = T_1_NORM
      ELSE
-       LBC_SC(1,J) = T_0
+       LBC_SC(1,J) = T_0_NORM
      END IF
      
      ! Middle columns of LBC_SC get the original PATCHES values
      DO I = 1, NX
        IF (PATCHES(I,J)) THEN
-         LBC_SC(I+1,J) = T_1
+         LBC_SC(I+1,J) = T_1_NORM
        ELSE
-         LBC_SC(I+1,J) = T_0
+         LBC_SC(I+1,J) = T_0_NORM
        END IF
      END DO
      
      ! Last column of LBC_SC gets the first column of PATCHES
      IF (PATCHES(1,J)) THEN
-       LBC_SC(NX+2,J) = T_1
+       LBC_SC(NX+2,J) = T_1_NORM
      ELSE
-       LBC_SC(NX+2,J) = T_0
+       LBC_SC(NX+2,J) = T_0_NORM
      END IF
    END DO
    
