@@ -5,3 +5,4 @@ rm *.log
 rm *.dat
 rm -r output_0/
 rm -r restart_*
+rm -r *.err
