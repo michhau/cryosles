@@ -102,7 +102,7 @@ INTEGER,DIMENSION(0:nproc-1)           :: NZ_CUMUL, ETA_DISPL
 INTEGER,PARAMETER :: NZ_MAX = MAXVAL(NZ_VECTOR)
 
 REAL(RPREC),PARAMETER :: Z_I=1.0_rprec
-REAL(RPREC),PARAMETER :: T_SCALE=286.9_rprec !283.15_rprec !263.15_rprec 
+REAL(RPREC),PARAMETER :: T_SCALE=1.0_rprec !286.9_rprec !283.15_rprec !263.15_rprec 
 
 !! FOR STRETCHING GRID
 !INTEGER :: nz_salt,nz_middle,nz_upper
