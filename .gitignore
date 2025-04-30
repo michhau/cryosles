@@ -4,4 +4,4 @@ compiled/
 model/program.exe
 model/src/.mod
 model/src/.obj
-model/src/.depend
+model/.depend
