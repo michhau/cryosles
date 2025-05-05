@@ -5,3 +5,5 @@ model/program.exe
 model/src/.mod
 model/src/.obj
 model/.depend
+.~lock*
+settings.json
