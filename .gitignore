@@ -7,3 +7,4 @@ model/src/.obj
 model/.depend
 .~lock*
 settings.json
+*.mod
