@@ -99,7 +99,9 @@ real(rprec) :: get_eta_local
 !get_eta_local = 1.9649756542092672_rprec*(16.29776532602988_rprec + 5.219611873785569_rprec*(i) - 1.000000_rprec*sqrt(265.61715462234242_rprec - 153.31078467741929_rprec*(i) + 24.588024171949374_rprec*(i*i)))
 !get_eta_local = 20.371837_rprec*(i)
 !get_eta_local = 10.18589_rprec*(i)
-get_eta_local = 5.09295925_rprec*(i) !for 2pi and z_tot=33
+!get_eta_local = 5.09295925_rprec*(i) !for 2pi and z_tot=33
+get_eta_local = 2.037183272_rprec*(i) !for 5pi and z_tot=33
+!get_eta_local = 2.716244362_rprec*(i) !for 30pi and z_tot=257
 end function get_eta_local
 
 end module stretch
