@@ -155,6 +155,37 @@ ELSEIF(VI4)THEN
    W=W0
    IF(COORD==0) PRINT*,'SET IC V_INIT4'
 
+ELSEIF(VI5)THEN
+   
+   write(*,*) 'Using composite profile with Z_BLEND=',Z_BLEND
+   DO JZ=1,NZ
+      kk = jz + eta_displ(coord)
+      Z = get_z_local(2*kk-1)
+      
+      IF(Z.GE.DSPL_H)THEN
+         IF(Z <= Z_BLEND) THEN
+            ! Logarithmic profile below Z_BLEND
+            ARG2(1:NX,1:NY)=(Z-DSPL_H)/LBC_Z0(1:NX,1:NY)
+            ARG=(1._RPREC/VONK)*DLOG(ARG2(1,1))
+            U(:,:,JZ)= DIR_X*SQRT(PFX*get_z_local(2*nz_tot-2))*ARG(:,:)
+            V(:,:,JZ)= DIR_Y*SQRT(PFX*get_z_local(2*nz_tot-2))*ARG(:,:)
+         ELSE
+            ! Constant profile above Z_BLEND
+            ! Get the velocity at Z_BLEND
+            ARG2(1:NX,1:NY)=(Z_BLEND-DSPL_H)/LBC_Z0(1:NX,1:NY)
+            ARG=(1._RPREC/VONK)*DLOG(ARG2(1,1))
+            U(:,:,JZ)= DIR_X*SQRT(PFX*get_z_local(2*nz_tot-2))*ARG(:,:)
+            V(:,:,JZ)= DIR_Y*SQRT(PFX*get_z_local(2*nz_tot-2))*ARG(:,:)
+         ENDIF
+         W(:,:,JZ)= 0.00_RPREC
+      ELSE
+         U(:,:,JZ)=0.0_RPREC
+         V(:,:,JZ)=0.0_RPREC
+         W(:,:,JZ)=0.0_RPREC
+      ENDIF
+   ENDDO
+   IF(COORD==0) PRINT*,'SET IC V_INIT5 (COMPOSITE PROFILE)'
+
 ENDIF
 
 !NOISE -----------------------------------------------------
