@@ -163,21 +163,27 @@ ELSEIF(VI5)THEN
       Z = get_z_local(2*kk-1)
       
       IF(Z.GE.DSPL_H)THEN
-         IF(Z <= Z_BLEND) THEN
-            ! Logarithmic profile below Z_BLEND
+         IF(Z.LE.Z_BLEND) THEN
+            !IMPOSE LOG LAW (VECTORS AS LBC_ZO MIGHT VARY IN SPACE)
             ARG2(1:NX,1:NY)=(Z-DSPL_H)/LBC_Z0(1:NX,1:NY)
             ARG=(1._RPREC/VONK)*DLOG(ARG2(1,1))
             U(:,:,JZ)= DIR_X*SQRT(PFX*get_z_local(2*nz_tot-2))*ARG(:,:)
             V(:,:,JZ)= DIR_Y*SQRT(PFX*get_z_local(2*nz_tot-2))*ARG(:,:)
+            W(:,:,JZ)= 0.00_RPREC
          ELSE
             ! Constant profile above Z_BLEND
             ! Get the velocity at Z_BLEND
-            ARG2(1:NX,1:NY)=(Z_BLEND-DSPL_H)/LBC_Z0(1:NX,1:NY)
+            !ARG2(1:NX,1:NY)=(Z_BLEND-DSPL_H)/LBC_Z0(1:NX,1:NY)
+            !ARG=(1._RPREC/VONK)*DLOG(ARG2(1,1))
+            !U(:,:,JZ)= DIR_X*SQRT(PFX*get_z_local(2*nz_tot-2))*ARG(:,:)
+            !V(:,:,JZ)= DIR_Y*SQRT(PFX*get_z_local(2*nz_tot-2))*ARG(:,:)
+            !W(:,:,JZ)= 0.00_RPREC
+            ARG2(1:NX,1:NY)=(Z-DSPL_H)/LBC_Z0(1:NX,1:NY)
             ARG=(1._RPREC/VONK)*DLOG(ARG2(1,1))
             U(:,:,JZ)= DIR_X*SQRT(PFX*get_z_local(2*nz_tot-2))*ARG(:,:)
             V(:,:,JZ)= DIR_Y*SQRT(PFX*get_z_local(2*nz_tot-2))*ARG(:,:)
+            W(:,:,JZ)= 0.00_RPREC
          ENDIF
-         W(:,:,JZ)= 0.00_RPREC
       ELSE
          U(:,:,JZ)=0.0_RPREC
          V(:,:,JZ)=0.0_RPREC
