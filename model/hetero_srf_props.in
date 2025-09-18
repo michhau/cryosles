@@ -6,7 +6,7 @@ author: Michael Haugeneder, 25.03.2025
 #--------------------------------------------------
 #Surface type '0' in patches.in (e.g. bare ground)
 MODE_0= 1 #1=same for all pixels, e.g. 2(not yet implemented)=gaussian
-T_0= 293.15 #temperature of pixel [K]
+T_0= 298.15 #temperature of pixel [K]
 Z0_0= 0.005 #aerodynamic roughness length [m]
 
 #--------------------------------------------------

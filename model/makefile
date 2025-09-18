@@ -32,9 +32,9 @@ SHELL = /bin/sh
 
 #architecture ---------------------------- please modify
 #ARCH = PC_GNU
-ARCH = PC_INTEL
+#ARCH = PC_INTEL
 #ARCH = BELLATRIX_INTEL
-#ARCH = CSCS_INTEL
+ARCH = CSCS_INTEL
 #ARCH = DENEB_INTEL
 #ARCH = MAMMOUTH
 

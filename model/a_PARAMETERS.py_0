@@ -1,13 +1,13 @@
 #GEOMETRY
-L_X= 12.56637 #19.2 #6.40 #0.785407 #1.570814 # 12.56637 #3.141628 #6.283256
-L_Y= 12.56637 #18.32 #6.40 #6.40 #0.785407 #1.570817 #6.283256
-L_Z= 12.56637 #12.56637 #18.317655 #6.40 #1.000000
+L_X= 50.265482 #19.2 #6.40 #0.785407 #1.570814 # 12.56637 #3.141628 #6.283256
+L_Y= 50.265482 #18.32 #6.40 #6.40 #0.785407 #1.570817 #6.283256
+L_Z= 50.265482 #12.56637 #18.317655 #6.40 #1.000000
 c_factor= 1.0 #0.1455890625 #0.0485296875 #0.10000
 f_factor= 1.0 #1.7625 #0.5875 #0.90000
 noise_factor= F
 #TIME_STEPPING 
-NSTEPS= 1000000 #2000000
-DT= 0.001 # time step (s)
+NSTEPS= 100000 #2000000
+DT= 0.005 # time step (s)
 TR_STEPS= 0 # slower initial time steps (numerical stability) 
 TR_DT_FACTOR= 1.0 # DT=DT*TR_DT_FACTOR during TR_STEPS
 #SIMULATION PARAMETERS
@@ -24,7 +24,7 @@ SC1= T
 SC2= F
 SLOPE= F # T for sloping surface
 ALPHA= 0.0
-FORCE_X= 0.0023480000 #0.0058700000 #0.02500000  #15625          # CORRESPONDS TO USTAR=1 WITH LZ=0.5
+FORCE_X= 0.0041276566 #0.0058700000 #0.02500000  #15625          # CORRESPONDS TO USTAR=1 WITH LZ=0.5
 FORCE_Y= 0.0          #-0.914
 #GEOSTROPHIC
 coriol= 0.00 #0.13942923 # actual coriolis parameter times 1000
@@ -40,14 +40,14 @@ WALL_DMP= F
 
 #################################################################
 #MOMENTUM IC
-VI1= F     #CONSTANT
-VI2= T	   #LOG: based on FORCE_X and FORCE_Y
+VI1= T     #CONSTANT
+VI2= F	   #LOG: based on FORCE_X and FORCE_Y
 VI3= F     #POISEUILLE
 VI4= F     #LINEAR
 VI5= F     #COMPOSITE: LOG up to Z_BLEND, CONSTANT above
 Z_BLEND= 2.0  #Height where profile transitions from log to constant
 VNF= 5.0
-U0= 2.0
+U0= 4.0
 V0= 0.0
 W0= 0.0
 DUDZ0= 0.0
@@ -88,18 +88,18 @@ VERBOSE= F
 PROFILE= T
 #STD OUTPUT
 WBASE= 500 #1000 # frequency for average ustar, mean vertical profiles, etc.
-C_CNT1= 100000 #100000000 #100000 # frequency for instantaneous field
-C_CNT2= 100000 #100000000 #100000 # instantaneous slice frequency (3 xz-, 3 yz-, 1 xy-slices per process)
-P_CNT3= 100000 #50000 #100000  #ta1 field
-C_CNT3= 50 #100 #1000 # ta1 sampling frequency
+C_CNT1= 10000 #100000000 #100000 # frequency for instantaneous field
+C_CNT2= 10000 #100000000 #100000 # instantaneous slice frequency (3 xz-, 3 yz-, 1 xy-slices per process)
+P_CNT3= 10000 #50000 #100000  #ta1 field
+C_CNT3= 10 #100 #1000 # ta1 sampling frequency
 HAVG_CNT3= F # 'T': save only horizontal averages of ta1 field / 'F': save whole 3D ta1 field 
-C_CNT4= 100000 #500000 # frequency for field for input for another simulation
+C_CNT4= 10000 #500000 # frequency for field for input for another simulation
 inlet_count= 50000000
-C_CNT5= 50 # frequency for imitating eddy covariance sampling in the center of the domain
+C_CNT5= 10 # frequency for imitating eddy covariance sampling in the center of the domain
 Z_EDDY_COV= 1.9 # height (m) of eddy covariance sampling. If Z_EDDY_COV > L_Z, the eddy covariance output is omitted.
 
 #SCALAR1
-SC1_INIT= 273.15 # initial temperature (non-dimensional) at the second lowest grid point level, 1.0 corresponds to the value of T_SCALE in PARAM.f90
+SC1_INIT= 288.919 # initial temperature (non-dimensional) at the second lowest grid point level, 1.0 corresponds to the value of T_SCALE in PARAM.f90
 DSC1DZ_INIT= 0.001408 # slope for initial vertical profile (1/m), only used if VI1= T
 SC1STAR_INIT= 0.00000 #0.00016 # temperature scale (dimensionless) for initial log profile, only used if VI1= F and VI2= T
 NF_SC1= 0.01 # noise factor
