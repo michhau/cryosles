@@ -100,7 +100,8 @@ real(rprec) :: get_eta_local
 !get_eta_local = 20.371837_rprec*(i)
 !get_eta_local = 10.18589_rprec*(i)
 !get_eta_local = 5.09295925_rprec*(i) !for 2pi and z_tot=33
-get_eta_local = 2.037183272_rprec*(i) !for 5pi and z_tot=33
+get_eta_local = 2.54647909_rprec*(i) !for 4pi and z_tot=33
+!get_eta_local = 2.037183272_rprec*(i) !for 5pi and z_tot=33
 !get_eta_local = 2.716244362_rprec*(i) !for 30pi and z_tot=257
 end function get_eta_local
 
