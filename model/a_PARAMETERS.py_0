@@ -44,7 +44,7 @@ VI1= F     #CONSTANT
 VI2= T	   #LOG: based on FORCE_X and FORCE_Y
 VI3= F     #POISEUILLE
 VI4= F     #LINEAR
-VI5= T     #COMPOSITE: LOG up to Z_BLEND, CONSTANT above
+VI5= F     #COMPOSITE: LOG up to Z_BLEND, CONSTANT above
 Z_BLEND= 2.0  #Height where profile transitions from log to constant
 VNF= 5.0
 U0= 2.0
@@ -99,7 +99,7 @@ C_CNT5= 50 # frequency for imitating eddy covariance sampling in the center of t
 Z_EDDY_COV= 1.9 # height (m) of eddy covariance sampling. If Z_EDDY_COV > L_Z, the eddy covariance output is omitted.
 
 #SCALAR1
-SC1_INIT= 1.0 # initial temperature (non-dimensional) at the second lowest grid point level, 1.0 corresponds to the value of T_SCALE in PARAM.f90
+SC1_INIT= 273.15 # initial temperature (non-dimensional) at the second lowest grid point level, 1.0 corresponds to the value of T_SCALE in PARAM.f90
 DSC1DZ_INIT= 0.001408 # slope for initial vertical profile (1/m), only used if VI1= T
 SC1STAR_INIT= 0.00000 #0.00016 # temperature scale (dimensionless) for initial log profile, only used if VI1= F and VI2= T
 NF_SC1= 0.01 # noise factor
