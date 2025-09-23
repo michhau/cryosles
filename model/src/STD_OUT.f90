@@ -432,16 +432,17 @@ integer,intent(in) :: ind,c_cnt
 character(*),intent(in) :: strVar,opath
 integer :: i,j,k
 character(len=256) :: filename
-integer,dimension(3) :: nxs,nys
+integer,dimension(1) :: nys
+integer,dimension(3) :: nxs
 logical :: file_exists
 
 ! define slices
-nys(1) = floor(ny/3.0)
-nys(2) = floor(ny/2.0)
-nys(3) = floor(ny*2.0/3.0)
-nxs(1) = floor(nx/3.0)
-nxs(2) = floor(nx/2.0)
-nxs(3) = floor(nx*2.0/3.0)
+!nys(1) = floor(ny/3.0)
+nys(1) = floor(ny/2.0)
+!nys(3) = floor(ny*2.0/3.0)
+nxs(1) = 43!floor(nx/3.0)
+nxs(2) = 46!floor(nx/2.0)
+nxs(3) = 90!floor(nx*2.0/3.0)
 
 if(coord .eq. 0) then
    write(filename,'(a)') trim(opath)//'parameters.txt'
