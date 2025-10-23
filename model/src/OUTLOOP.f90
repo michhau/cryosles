@@ -30,7 +30,7 @@ real(rprec) :: cfl,cflOld,viscStab,visc_sc_stab,rmsdivvel,maxrmsdivvel,ke, &
                u_vavg,sc1_vavg,sc1_star_havg,      &
                u_star_havg,u_havg,sc1_havg,phi_m_havg,psi_m_havg,obk_l_havg,sc2_star_havg, &
                sc2_havg, tzsc1_havg, tzsc2_havg !,sc3_star_havg
-integer,save :: id1=1,id2=1,id3=1,id4=1
+integer,save :: id1,id2,id4
 integer,dimension(3) :: slc_id
 integer :: nterms,nsampl,result
 real(rprec) :: tot_mb,step_mb
@@ -118,6 +118,12 @@ ENDIF
 !######################################################################
 ! OUTPUT TO FILE
 
+   !initialize record numbers such that records are not overwritten at restart
+   if(jt==1) then
+     id1 = floor(real(jt_total,rprec)/real(c_cnt1,rprec))+1
+     id2 = floor(real(jt_total,rprec)/real(c_cnt2,rprec))+1
+     id4 = id2
+   endif
 
    !write inst field
    write(opath,'(a)') trim(out_path)//'ts1_field/'
