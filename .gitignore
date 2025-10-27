@@ -5,6 +5,7 @@ model/program.exe
 model/src/.mod
 model/src/.obj
 model/.depend
+model/restart_files*
 .~lock*
 settings.json
 *.mod
