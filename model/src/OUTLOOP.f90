@@ -162,6 +162,7 @@ ENDIF
       call inst_slice(v,'v',c_cnt2,opath,id2)
       call inst_slice(w,'w',c_cnt2,opath,id2)
       if(TEMPERATURE) call inst_slice(sc1,'t',c_cnt2,opath,id2)
+      if(TEMPERATURE) call inst_slice(tzsc1,'ttz',c_cnt2,opath,id2)
       if(HUMIDITY) call inst_slice(sc2,'q',c_cnt2,opath,id2)
       !if(HUMIDITY) call inst_slice(sc3,'q_part',c_cnt2,opath,id2)
 
