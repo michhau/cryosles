@@ -6,7 +6,7 @@ c_factor= 1.0 #0.1455890625 #0.0485296875 #0.10000
 f_factor= 1.0 #1.7625 #0.5875 #0.90000
 noise_factor= F
 #TIME_STEPPING 
-NSTEPS= 80000 #2000000
+NSTEPS= 28000 #2000000
 DT= 0.0025 # time step (s)
 TR_STEPS= 0 # slower initial time steps (numerical stability) 
 TR_DT_FACTOR= 1.0 # DT=DT*TR_DT_FACTOR during TR_STEPS
@@ -24,7 +24,7 @@ SC1= T
 SC2= F
 SLOPE= F # T for sloping surface
 ALPHA= 0.0
-FORCE_X= 0.0041276566 #0.0058700000 #0.02500000  #15625          # CORRESPONDS TO USTAR=1 WITH LZ=0.5
+FORCE_X= 0.008 #0.0058700000 #0.02500000  #15625          # CORRESPONDS TO USTAR=1 WITH LZ=0.5
 FORCE_Y= 0.0          #-0.914
 #GEOSTROPHIC
 coriol= 0.00 #0.13942923 # actual coriolis parameter times 1000
@@ -40,8 +40,8 @@ WALL_DMP= F
 
 #################################################################
 #MOMENTUM IC
-VI1= T     #CONSTANT
-VI2= F	   #LOG: based on FORCE_X and FORCE_Y
+VI1= F     #CONSTANT
+VI2= T	   #LOG: based on FORCE_X and FORCE_Y
 VI3= F     #POISEUILLE
 VI4= F     #LINEAR
 VI5= F     #COMPOSITE: LOG up to Z_BLEND, CONSTANT above
@@ -93,7 +93,7 @@ C_CNT2= 20 #100000000 #100000 # instantaneous slice frequency (1 xz-, 3 yz-, 6 x
 P_CNT3= 24000 #50000 #100000  #ta1 field
 C_CNT3= 400 #100 #1000 # ta1 sampling frequency
 HAVG_CNT3= F # 'T': save only horizontal averages of ta1 field / 'F': save whole 3D ta1 field 
-C_CNT4= 80000 #500000 # frequency for field for input for another simulation
+C_CNT4= 28000 #500000 # frequency for field for input for another simulation
 inlet_count= 50000000
 C_CNT5= 20 # frequency for imitating eddy covariance sampling in the center of the domain
 Z_EDDY_COV= 2.0 # height (m) of eddy covariance sampling. If Z_EDDY_COV > L_Z, the eddy covariance output is omitted.
