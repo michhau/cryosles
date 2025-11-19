@@ -91,25 +91,25 @@ SUBROUTINE SET_LBC_SC_ZO_HETERO(LBC_SC_ZO, PATCHES, NX, NY, Z0_0, Z0_1)
    DO J = 1, NY
      ! First column of LBC_SC_ZO gets the last column of PATCHES
      IF (PATCHES(NX,J)) THEN
-       LBC_SC_ZO(1,J) = Z0_1
+       LBC_SC_ZO(1,J) = Z0_1*0.1_rprec
      ELSE
-       LBC_SC_ZO(1,J) = Z0_0
+       LBC_SC_ZO(1,J) = Z0_0*0.1_rprec
      END IF
      
      ! Middle columns of LBC_SC_ZO get the original PATCHES values
      DO I = 1, NX
        IF (PATCHES(I,J)) THEN
-         LBC_SC_ZO(I+1,J) = Z0_1
+         LBC_SC_ZO(I+1,J) = Z0_1*0.1_rprec
        ELSE
-         LBC_SC_ZO(I+1,J) = Z0_0
+         LBC_SC_ZO(I+1,J) = Z0_0*0.1_rprec
        END IF
      END DO
      
      ! Last column of LBC_SC_ZO gets the first column of PATCHES
      IF (PATCHES(1,J)) THEN
-       LBC_SC_ZO(NX+2,J) = Z0_1
+       LBC_SC_ZO(NX+2,J) = Z0_1*0.1_rprec
      ELSE
-       LBC_SC_ZO(NX+2,J) = Z0_0
+       LBC_SC_ZO(NX+2,J) = Z0_0*0.1_rprec
      END IF
    END DO
    
