@@ -487,23 +487,21 @@ endif
 call mpi_barrier(comm,ierr)
 
 ! write 3 slices xz binary (nz-1 cause of MPI)
-write(filename,'(a,i0)') trim(opath)//trim(strVar)//'_XZ.c',coord
-open(111,file=trim(filename),status='unknown',access='direct',recl=4*nx*size(nys)*(nz-1))
-write(111,rec=ind) real(var(1:nx,nys,1:nz-1))
-close(111)
+!write(filename,'(a,i0)') trim(opath)//trim(strVar)//'_XZ.c',coord
+!open(111,file=trim(filename),status='unknown',access='direct',recl=4*nx*size(nys)*(nz-1))
+!write(111,rec=ind) real(var(1:nx,nys,1:nz-1))
+!close(111)
 
 ! write 3 slices yz binary (nz-1 cause of MPI)
-write(filename,'(a,i0)') trim(opath)//trim(strVar)//'_YZ.c',coord
-open(111,file=trim(filename),status='unknown',access='direct',recl=4*ny*size(nxs)*(nz-1))
-write(111,rec=ind) real(var(nxs,1:ny,1:nz-1))
-close(111)
-
-
+!write(filename,'(a,i0)') trim(opath)//trim(strVar)//'_YZ.c',coord
+!open(111,file=trim(filename),status='unknown',access='direct',recl=4*ny*size(nxs)*(nz-1))
+!write(111,rec=ind) real(var(nxs,1:ny,1:nz-1))
+!close(111)
 
 ! write 1 slice xy binary 
 write(filename,'(a,i0)') trim(opath)//trim(strVar)//'_XY.c',coord
 open(111,file=trim(filename),status='unknown',access='direct',recl=4*nx*ny)
-write(111,rec=ind) real(var(1:nx,1:ny,floor((nz-1.0)/2.0)))
+write(111,rec=ind) real(var(1:nx,1:ny,1))!hard coded to middle layer for nzi=1, before it was floor((nz-1.0)/2.0)))
 close(111)
 
 
