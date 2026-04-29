@@ -38,6 +38,44 @@ END SUBROUTINE SET_LBC_ZO
 
 
 !!--------------------------------------------------------------------------------
+!!  OBJECT: SUBROUTINE SET_LBC_ZO_HETERO()
+!!--------------------------------------------------------------------------------
+!!
+!!  LAST CHECKED/MODIFIED: Michi Haugeneder 29.04.2026
+!!
+!!  Set lower BC for aerodynamic roughness length for heterogeneous surfaces.
+!!
+!!--------------------------------------------------------------------------------
+SUBROUTINE SET_LBC_ZO_HETERO(LBC_ZO, PATCHES, NX, NY, Z0_0, Z0_1)
+   IMPLICIT NONE
+
+   INTEGER, INTENT(IN) :: NX, NY
+   LOGICAL, INTENT(IN) :: PATCHES(NX,NY)
+   REAL(RPREC), INTENT(IN) :: Z0_0
+   REAL(RPREC), INTENT(IN) :: Z0_1
+
+   REAL(RPREC),DIMENSION(:,:),INTENT(OUT) :: LBC_ZO
+
+   INTEGER :: I, J, PATCH_I
+
+   ! Active physical x-cells are 1:NX.  Extra LD padding is filled
+   ! periodically only to keep full-array operations initialized.
+   DO J = 1, NY
+     DO I = 1, SIZE(LBC_ZO,1)
+       PATCH_I = MOD(I-1, NX) + 1
+       IF (PATCHES(PATCH_I,J)) THEN
+         LBC_ZO(I,J) = Z0_1
+       ELSE
+         LBC_ZO(I,J) = Z0_0
+       END IF
+     END DO
+   END DO
+
+END SUBROUTINE SET_LBC_ZO_HETERO
+
+
+
+!!--------------------------------------------------------------------------------
 !!  OBJECT: SUBROUTINE SET_LBC_SC_ZO()
 !!--------------------------------------------------------------------------------
 !!
@@ -85,32 +123,19 @@ SUBROUTINE SET_LBC_SC_ZO_HETERO(LBC_SC_ZO, PATCHES, NX, NY, Z0_0, Z0_1)
    REAL(RPREC),DIMENSION(:,:),INTENT(OUT) :: LBC_SC_ZO
    
    ! Local variables
-   INTEGER :: I, J
+   INTEGER :: I, J, PATCH_I
    
-   ! Set the bottom boundary condition with periodic extension
+   ! Active physical x-cells are 1:NX.  Extra LD padding is filled
+   ! periodically only to keep full-array operations initialized.
    DO J = 1, NY
-     ! First column of LBC_SC_ZO gets the last column of PATCHES
-     IF (PATCHES(NX,J)) THEN
-       LBC_SC_ZO(1,J) = Z0_1*0.1_rprec
-     ELSE
-       LBC_SC_ZO(1,J) = Z0_0*0.1_rprec
-     END IF
-     
-     ! Middle columns of LBC_SC_ZO get the original PATCHES values
-     DO I = 1, NX
-       IF (PATCHES(I,J)) THEN
-         LBC_SC_ZO(I+1,J) = Z0_1*0.1_rprec
+     DO I = 1, SIZE(LBC_SC_ZO,1)
+       PATCH_I = MOD(I-1, NX) + 1
+       IF (PATCHES(PATCH_I,J)) THEN
+         LBC_SC_ZO(I,J) = Z0_1*0.1_rprec
        ELSE
-         LBC_SC_ZO(I+1,J) = Z0_0*0.1_rprec
+         LBC_SC_ZO(I,J) = Z0_0*0.1_rprec
        END IF
      END DO
-     
-     ! Last column of LBC_SC_ZO gets the first column of PATCHES
-     IF (PATCHES(1,J)) THEN
-       LBC_SC_ZO(NX+2,J) = Z0_1*0.1_rprec
-     ELSE
-       LBC_SC_ZO(NX+2,J) = Z0_0*0.1_rprec
-     END IF
    END DO
    
  END SUBROUTINE SET_LBC_SC_ZO_HETERO
@@ -351,37 +376,24 @@ SUBROUTINE COMPUTE_LBC_SC_HETERO(LBC_SC, PATCHES, NX, NY, T_0, T_1)
    REAL(RPREC),DIMENSION(:,:),INTENT(OUT) :: LBC_SC
    
    ! Local variables
-   INTEGER :: I, J
+   INTEGER :: I, J, PATCH_I
    REAL(RPREC) :: T_0_NORM, T_1_NORM
    
    ! Normalize the temperature values by dividing by T_SCALE
    T_0_NORM = T_0 / T_SCALE
    T_1_NORM = T_1 / T_SCALE
    
-   ! Set the bottom boundary condition with periodic extension
+   ! Active physical x-cells are 1:NX.  Extra LD padding is filled
+   ! periodically only to keep full-array operations initialized.
    DO J = 1, NY
-     ! First column of LBC_SC gets the last column of PATCHES
-     IF (PATCHES(NX,J)) THEN
-       LBC_SC(1,J) = T_1_NORM
-     ELSE
-       LBC_SC(1,J) = T_0_NORM
-     END IF
-     
-     ! Middle columns of LBC_SC get the original PATCHES values
-     DO I = 1, NX
-       IF (PATCHES(I,J)) THEN
-         LBC_SC(I+1,J) = T_1_NORM
+     DO I = 1, SIZE(LBC_SC,1)
+       PATCH_I = MOD(I-1, NX) + 1
+       IF (PATCHES(PATCH_I,J)) THEN
+         LBC_SC(I,J) = T_1_NORM
        ELSE
-         LBC_SC(I+1,J) = T_0_NORM
+         LBC_SC(I,J) = T_0_NORM
        END IF
      END DO
-     
-     ! Last column of LBC_SC gets the first column of PATCHES
-     IF (PATCHES(1,J)) THEN
-       LBC_SC(NX+2,J) = T_1_NORM
-     ELSE
-       LBC_SC(NX+2,J) = T_0_NORM
-     END IF
    END DO
    
  END SUBROUTINE COMPUTE_LBC_SC_HETERO
@@ -511,5 +523,4 @@ END SUBROUTINE SET_VALUE
 
 
 END MODULE BC
-
 

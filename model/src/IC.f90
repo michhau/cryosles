@@ -95,7 +95,8 @@ ELSEIF(VI2)THEN
       IF(Z.GE.DSPL_H)THEN
          !IMPOSE LOG LAW (VECTORS AS LBC_ZO MIGHT VARY IN SPACE)
          ARG2(1:NX,1:NY)=(Z-DSPL_H)/LBC_Z0(1:NX,1:NY)
-         ARG=(1._RPREC/VONK)*DLOG(ARG2(1,1))
+         ARG=0.0_RPREC
+         ARG(1:NX,1:NY)=(1._RPREC/VONK)*DLOG(ARG2(1:NX,1:NY))
          U(:,:,JZ)= DIR_X*SQRT(PFX*get_z_local(2*nz_tot-2))*ARG(:,:)
          V(:,:,JZ)= DIR_Y*SQRT(PFX*get_z_local(2*nz_tot-2))*ARG(:,:)
          !U(:,:,JZ) = DIR_X*PFX*ARG(:,:)
@@ -166,7 +167,8 @@ ELSEIF(VI5)THEN
          IF(Z.LE.Z_BLEND) THEN
             !IMPOSE LOG LAW (VECTORS AS LBC_ZO MIGHT VARY IN SPACE)
             ARG2(1:NX,1:NY)=(Z-DSPL_H)/LBC_Z0(1:NX,1:NY)
-            ARG=(1._RPREC/VONK)*DLOG(ARG2(1,1))
+            ARG=0.0_RPREC
+            ARG(1:NX,1:NY)=(1._RPREC/VONK)*DLOG(ARG2(1:NX,1:NY))
             U(:,:,JZ)= DIR_X*SQRT(PFX*get_z_local(2*nz_tot-2))*ARG(:,:)
             V(:,:,JZ)= DIR_Y*SQRT(PFX*get_z_local(2*nz_tot-2))*ARG(:,:)
             W(:,:,JZ)= 0.00_RPREC
@@ -179,7 +181,8 @@ ELSEIF(VI5)THEN
             !V(:,:,JZ)= DIR_Y*SQRT(PFX*get_z_local(2*nz_tot-2))*ARG(:,:)
             !W(:,:,JZ)= 0.00_RPREC
             ARG2(1:NX,1:NY)=(Z-DSPL_H)/LBC_Z0(1:NX,1:NY)
-            ARG=(1._RPREC/VONK)*DLOG(ARG2(1,1))
+            ARG=0.0_RPREC
+            ARG(1:NX,1:NY)=(1._RPREC/VONK)*DLOG(ARG2(1:NX,1:NY))
             U(:,:,JZ)= DIR_X*SQRT(PFX*get_z_local(2*nz_tot-2))*ARG(:,:)
             V(:,:,JZ)= DIR_Y*SQRT(PFX*get_z_local(2*nz_tot-2))*ARG(:,:)
             W(:,:,JZ)= 0.00_RPREC
