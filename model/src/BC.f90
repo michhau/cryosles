@@ -92,7 +92,8 @@ REAL(RPREC),DIMENSION(:,:),INTENT(INOUT) :: LBC_SC_ZO
 INTEGER,INTENT(IN) :: SCALAR
 
 IF(SCALAR .EQ. 1) then
- LBC_SC_ZO=LBC_DZ0*0.1_rprec
+ ! z0h = 0.05*z0m according to kB^(-1)=3 (see Obsidian Michi Haugeneder 29.04.2026)
+ LBC_SC_ZO=LBC_DZ0*0.05_rprec
 ELSEIF(SCALAR .EQ. 2) then
  LBC_SC_ZO=LBC_DZ0*0.1_rprec
 ENDIF   
@@ -127,13 +128,14 @@ SUBROUTINE SET_LBC_SC_ZO_HETERO(LBC_SC_ZO, PATCHES, NX, NY, Z0_0, Z0_1)
    
    ! Active physical x-cells are 1:NX.  Extra LD padding is filled
    ! periodically only to keep full-array operations initialized.
+   ! z0h = 0.05*z0m according to kB^(-1)=3 (see Obsidian Michi Haugeneder 29.04.2026)
    DO J = 1, NY
      DO I = 1, SIZE(LBC_SC_ZO,1)
        PATCH_I = MOD(I-1, NX) + 1
        IF (PATCHES(PATCH_I,J)) THEN
-         LBC_SC_ZO(I,J) = Z0_1*0.1_rprec
+         LBC_SC_ZO(I,J) = Z0_1*0.05_rprec
        ELSE
-         LBC_SC_ZO(I,J) = Z0_0*0.1_rprec
+         LBC_SC_ZO(I,J) = Z0_0*0.05_rprec
        END IF
      END DO
    END DO
@@ -523,4 +525,3 @@ END SUBROUTINE SET_VALUE
 
 
 END MODULE BC
-
