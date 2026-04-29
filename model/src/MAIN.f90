@@ -257,10 +257,10 @@ ENDIF
 
 
 !set momentum ic (important to have set sc1,sc2 before if s_flag)
-CALL SET_LBC_ZO(LBC_Z0) !IF WALL_LAW
+!CALL SET_LBC_ZO(LBC_Z0) !IF WALL_LAW !without heterogeneity
+CALL SET_LBC_ZO_HETERO(LBC_Z0,PATCHES,NX,NY,Z0_0,Z0_1) !IF WALL_LAW
 CALL INIT(U,V,W,U_STAR,PFX,PFY,DSPL_H)
 CALL MPI_BARRIER(COMM,IERR)
-
 
 !initialize time
 tt=0
@@ -909,4 +909,3 @@ call mpi_finalize(ierr)
 
 
 END PROGRAM MAIN
-
