@@ -85,7 +85,7 @@ INTEGER :: JX,JY,JZ
 INTEGER :: ITER,RESULT
 CHARACTER(256) :: HEADERS,PHI_FILE,SRF_FILE,sscr1,sscr2,filename, filename_hetero, filename_patches
 LOGICAL :: CHECK
-REAL(RPREC) :: SCR1,SCR2,P1,P2,P1mom
+REAL(RPREC) :: SCR1,SCR2,P1,P2,P1mom,Z0M_INIT,Z0H_INIT
 REAL(RPREC) :: T1,T2,T3,T4,T5,T6
 integer :: jz_global
 integer :: omp_get_num_procs,omp_get_num_threads,omp_get_thread_num
@@ -231,12 +231,14 @@ call init_stretch
 IF(TEMPERATURE)THEN
    !CALL SET_LBC_SC_ZO(LBC_SC1_ZO,1)
    CALL SET_LBC_SC_ZO_HETERO(LBC_SC1_ZO,PATCHES,NX,NY,Z0_0,Z0_1)
+   CALL COMPUTE_GEOM_AVG_ZO(Z0H_INIT,LBC_SC1_ZO,NX,NY)
+   IF(COORD==0) PRINT*,'SC1 IC geometric mean z0h=',Z0H_INIT
    !CALL COMPUTE_LBC_SC(LBC_SC1,1)    !NEED LBC_SC1 IN INIT_SC FOR NOISE NORM.
    CALL COMPUTE_LBC_SC_HETERO(LBC_SC1,PATCHES,NX,NY,T_0,T_1)
    CALL INIT_SC( SC1,SC1_INIT,DSC1DZ_INIT,               &
                  NF_SC1,Z_TURB_SC1,                      &
                  Z_ENT_SC1,ENT_SC1_INIT,ENT_DSC1DZ_INIT,RHS_SC1, &
-                 SC1STAR_INIT, LBC_SC1_ZO(1,1) )
+                 SC1STAR_INIT, Z0H_INIT )
 ENDIF
 
 IF(HUMIDITY)THEN
@@ -259,7 +261,9 @@ ENDIF
 !set momentum ic (important to have set sc1,sc2 before if s_flag)
 !CALL SET_LBC_ZO(LBC_Z0) !IF WALL_LAW !without heterogeneity
 CALL SET_LBC_ZO_HETERO(LBC_Z0,PATCHES,NX,NY,Z0_0,Z0_1) !IF WALL_LAW
-CALL INIT(U,V,W,U_STAR,PFX,PFY,DSPL_H)
+CALL COMPUTE_GEOM_AVG_ZO(Z0M_INIT,LBC_Z0,NX,NY)
+IF(COORD==0) PRINT*,'Momentum IC geometric mean z0m=',Z0M_INIT
+CALL INIT(U,V,W,U_STAR,PFX,PFY,DSPL_H,Z0M_INIT)
 CALL MPI_BARRIER(COMM,IERR)
 
 !initialize time
