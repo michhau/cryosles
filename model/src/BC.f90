@@ -76,6 +76,34 @@ END SUBROUTINE SET_LBC_ZO_HETERO
 
 
 !!--------------------------------------------------------------------------------
+!!  OBJECT: SUBROUTINE COMPUTE_GEOM_AVG_ZO()
+!!--------------------------------------------------------------------------------
+!!
+!!  LAST CHECKED/MODIFIED: Michi Haugeneder 29.04.2026
+!!
+!!  Compute the geometric mean roughness length over the active horizontal cells.
+!!  This is intended for horizontally uniform logarithmic initial conditions.
+!!
+!!--------------------------------------------------------------------------------
+SUBROUTINE COMPUTE_GEOM_AVG_ZO(Z0_AVG, Z0_FIELD, NX, NY)
+   IMPLICIT NONE
+
+   INTEGER, INTENT(IN) :: NX, NY
+   REAL(RPREC), DIMENSION(:,:), INTENT(IN) :: Z0_FIELD
+   REAL(RPREC), INTENT(OUT) :: Z0_AVG
+
+   IF (ANY(Z0_FIELD(1:NX,1:NY) <= 0.0_RPREC)) THEN
+      PRINT*, 'ERROR: non-positive roughness length in COMPUTE_GEOM_AVG_ZO'
+      STOP
+   ENDIF
+
+   Z0_AVG = EXP(SUM(DLOG(Z0_FIELD(1:NX,1:NY))) / REAL(NX*NY,RPREC))
+
+END SUBROUTINE COMPUTE_GEOM_AVG_ZO
+
+
+
+!!--------------------------------------------------------------------------------
 !!  OBJECT: SUBROUTINE SET_LBC_SC_ZO()
 !!--------------------------------------------------------------------------------
 !!

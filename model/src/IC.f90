@@ -27,16 +27,15 @@ CONTAINS
 !!  TO BE IMPROVED: Encapsulate dns_bc
 !!
 !!-----------------------------------------------------------------------------------
-SUBROUTINE INIT(U,V,W,U_STAR,PFX,PFY,DSPL_H)
+SUBROUTINE INIT(U,V,W,U_STAR,PFX,PFY,DSPL_H,Z0_INIT)
 
 
 IMPLICIT NONE
 
 REAL(RPREC),DIMENSION(LD,NY,0:NZ),INTENT(OUT) :: U,V,W
 REAL(RPREC) :: Z,U_STAR,WT_AVG_LBC,T_AVG_LBC
-REAL(RPREC),DIMENSION(LD,NY) :: ARG,ARG2
-REAL(RPREC),INTENT(IN) :: PFX,PFY,DSPL_H
-REAL(RPREC) :: DIR_X,DIR_Y,NORM,A
+REAL(RPREC),INTENT(IN) :: PFX,PFY,DSPL_H,Z0_INIT
+REAL(RPREC) :: DIR_X,DIR_Y,NORM,A,ARG
 INTEGER :: JX,JZ
 integer :: kk
 
@@ -93,12 +92,10 @@ ELSEIF(VI2)THEN
       Z = get_z_local(2*kk-1) !c_stretch*(exp(kk*dz)-1.0_rprec)
       !Z=sum(dz(1:kk))-(dz(kk)/2.0_rprec)
       IF(Z.GE.DSPL_H)THEN
-         !IMPOSE LOG LAW (VECTORS AS LBC_ZO MIGHT VARY IN SPACE)
-         ARG2(1:NX,1:NY)=(Z-DSPL_H)/LBC_Z0(1:NX,1:NY)
-         ARG=0.0_RPREC
-         ARG(1:NX,1:NY)=(1._RPREC/VONK)*DLOG(ARG2(1:NX,1:NY))
-         U(:,:,JZ)= DIR_X*SQRT(PFX*get_z_local(2*nz_tot-2))*ARG(:,:)
-         V(:,:,JZ)= DIR_Y*SQRT(PFX*get_z_local(2*nz_tot-2))*ARG(:,:)
+         ! Impose a horizontally uniform log law using the effective IC roughness.
+         ARG=(1._RPREC/VONK)*DLOG((Z-DSPL_H)/Z0_INIT)
+         U(:,:,JZ)= DIR_X*SQRT(PFX*get_z_local(2*nz_tot-2))*ARG
+         V(:,:,JZ)= DIR_Y*SQRT(PFX*get_z_local(2*nz_tot-2))*ARG
          !U(:,:,JZ) = DIR_X*PFX*ARG(:,:)
          !V(:,:,JZ) = DIR_Y*PFX*ARG(:,:)        
          W(:,:,JZ)= 0.00_RPREC
@@ -165,12 +162,10 @@ ELSEIF(VI5)THEN
       
       IF(Z.GE.DSPL_H)THEN
          IF(Z.LE.Z_BLEND) THEN
-            !IMPOSE LOG LAW (VECTORS AS LBC_ZO MIGHT VARY IN SPACE)
-            ARG2(1:NX,1:NY)=(Z-DSPL_H)/LBC_Z0(1:NX,1:NY)
-            ARG=0.0_RPREC
-            ARG(1:NX,1:NY)=(1._RPREC/VONK)*DLOG(ARG2(1:NX,1:NY))
-            U(:,:,JZ)= DIR_X*SQRT(PFX*get_z_local(2*nz_tot-2))*ARG(:,:)
-            V(:,:,JZ)= DIR_Y*SQRT(PFX*get_z_local(2*nz_tot-2))*ARG(:,:)
+            ! Impose a horizontally uniform log law using the effective IC roughness.
+            ARG=(1._RPREC/VONK)*DLOG((Z-DSPL_H)/Z0_INIT)
+            U(:,:,JZ)= DIR_X*SQRT(PFX*get_z_local(2*nz_tot-2))*ARG
+            V(:,:,JZ)= DIR_Y*SQRT(PFX*get_z_local(2*nz_tot-2))*ARG
             W(:,:,JZ)= 0.00_RPREC
          ELSE
             ! Constant profile above Z_BLEND
@@ -180,11 +175,9 @@ ELSEIF(VI5)THEN
             !U(:,:,JZ)= DIR_X*SQRT(PFX*get_z_local(2*nz_tot-2))*ARG(:,:)
             !V(:,:,JZ)= DIR_Y*SQRT(PFX*get_z_local(2*nz_tot-2))*ARG(:,:)
             !W(:,:,JZ)= 0.00_RPREC
-            ARG2(1:NX,1:NY)=(Z-DSPL_H)/LBC_Z0(1:NX,1:NY)
-            ARG=0.0_RPREC
-            ARG(1:NX,1:NY)=(1._RPREC/VONK)*DLOG(ARG2(1:NX,1:NY))
-            U(:,:,JZ)= DIR_X*SQRT(PFX*get_z_local(2*nz_tot-2))*ARG(:,:)
-            V(:,:,JZ)= DIR_Y*SQRT(PFX*get_z_local(2*nz_tot-2))*ARG(:,:)
+            ARG=(1._RPREC/VONK)*DLOG((Z-DSPL_H)/Z0_INIT)
+            U(:,:,JZ)= DIR_X*SQRT(PFX*get_z_local(2*nz_tot-2))*ARG
+            V(:,:,JZ)= DIR_Y*SQRT(PFX*get_z_local(2*nz_tot-2))*ARG
             W(:,:,JZ)= 0.00_RPREC
          ENDIF
       ELSE
