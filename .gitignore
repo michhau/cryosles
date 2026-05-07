@@ -18,4 +18,4 @@ t_sgsFluxUpperBoundary_0.txt
 total_time.dat
 tstar_0.txt
 ustar_0.txt
-converted/
+model/converted/
