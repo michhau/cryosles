@@ -4,15 +4,16 @@
 #SBATCH --account=s1329
 #SBATCH --output=jobout_err/jobout_%j.out
 #SBATCH --error=jobout_err/joberr_%j.err
-#SBATCH --partition=normal
+#SBATCH --partition=debug
 #SBATCH --nodes=4
 #SBATCH --ntasks-per-node=32
 #SBATCH --cpus-per-task=4
 #SBATCH --constraint=mc
-#SBATCH --time=24:00:00
+#SBATCH --time=00:30:00
 ##SBATCH --mail-type=ALL
 ##SBATCH --mail-user=michael.haugeneder@slf.ch
 
+module purge
 module load cray/23.12
 module load PrgEnv-intel/8.5.0
 #module load slurm
