@@ -1,15 +1,15 @@
 #!/bin/bash -l
 
 #SBATCH --job-name="cryosles"
-#SBATCH --account=s1308
-#SBATCH --output=jobout_%j.out
-#SBATCH --error=joberr_%j.err
-#SBATCH --partition=debug
+#SBATCH --account=s1329
+#SBATCH --output=jobout_err/jobout_%j.out
+#SBATCH --error=jobout_err/joberr_%j.err
+#SBATCH --partition=normal
 #SBATCH --nodes=4
 #SBATCH --ntasks-per-node=32
 #SBATCH --cpus-per-task=4
 #SBATCH --constraint=mc
-#SBATCH --time=00:30:00
+#SBATCH --time=24:00:00
 ##SBATCH --mail-type=ALL
 ##SBATCH --mail-user=michael.haugeneder@slf.ch
 
@@ -30,7 +30,7 @@ export OMP_NUM_THREADS=4
 
 #/usr/bin/time -p srun --distribution=block:block --exclusive --hint=nomultithread numactl --interleave=all ./program.exe
 #/usr/bin/time -p srun --hint=nomultithread ./program.exe
-srun --hint=nomultithread --cpu-bind=sockets ./program.exe
+/usr/bin/time -p srun --hint=nomultithread --cpu-bind=sockets ./program.exe
 
 echo " ****** SIMULATION FINISHED ! ****** "
 exit
