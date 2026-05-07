@@ -1,0 +1,181 @@
+#GEOMETRY
+L_X= 50.265482 #19.2 #6.40 #0.785407 #1.570814 # 12.56637 #3.141628 #6.283256
+L_Y= 50.265482 #18.32 #6.40 #6.40 #0.785407 #1.570817 #6.283256
+L_Z= 50.265482 #12.56637 #18.317655 #6.40 #1.000000
+c_factor= 1.0 #0.1455890625 #0.0485296875 #0.10000
+f_factor= 1.0 #1.7625 #0.5875 #0.90000
+noise_factor= F
+#TIME_STEPPING 
+NSTEPS= 100000 #2000000
+DT= 0.002 # time step (s)
+TR_STEPS= 0 # slower initial time steps (numerical stability) 
+TR_DT_FACTOR= 1.0 # DT=DT*TR_DT_FACTOR during TR_STEPS
+#SIMULATION PARAMETERS
+RE= 100000000
+U_STAR= 1.0
+RI_SC1= 0.0
+PR_SC1= 0.71766988
+PR_SGS_SC1= 0.71766988
+PR_SC2= 0.631959376
+PR_SGS_SC2= 0.631959376
+#FLAGS
+SGS= T
+SC1= T
+SC2= F
+SLOPE= F # T for sloping surface
+ALPHA= 0.0
+FORCE_X= 0.008 #0.0058700000 #0.02500000  #15625          # CORRESPONDS TO USTAR=1 WITH LZ=0.5
+FORCE_Y= 0.0          #-0.914
+#GEOSTROPHIC
+coriol= 0.00 #0.13942923 # actual coriolis parameter times 1000
+ug= 0.00 #6.0000000
+vg= 0.00 #0.0000000
+#SGS
+MODEL= 5  #1->STAT; 2->DYN; 3->SDEP 4->LAGR SCALE-SIM 5->LAGR SCALE-DEP
+FILTER= 1  #1->CO 2->GSS 3->TH 
+CS_CNT= 10
+I_DYN= 1000 # number of initial time steps in which the static Smagorinsky model is used
+CO= 0.16
+WALL_DMP= F
+
+#################################################################
+#MOMENTUM IC
+VI1= F     #CONSTANT
+VI2= T	   #LOG: based on FORCE_X and FORCE_Y
+VI3= F     #POISEUILLE
+VI4= F     #LINEAR
+VI5= F     #COMPOSITE: LOG up to Z_BLEND, CONSTANT above
+Z_BLEND= 2.0  #Height where profile transitions from log to constant
+VNF= 5.0
+U0= 5.0
+V0= 0.0
+W0= 0.0
+DUDZ0= 0.0
+ZTURB= 100.0
+#MOMENTUM BC
+LLBC= STD
+LUBC= STD
+LLBC_SPECIAL= WALL_LAW  #SM_CUBES,DTM_DDFA,WALL_LAW,STD,IBM_DFA
+LUBC_SPECIAL= STD
+LLBC_U= DRC         #NEU,DRC,WLL
+LLBC_V= DRC
+LLBC_W= DRC
+LUBC_U= NEU
+LUBC_V= NEU
+LUBC_W= DRC
+DLBC_U= 0.0
+DLBC_V= 0.0
+DLBV_W= 0.0
+DUBC_U= 0.0
+DUBC_V= 0.0
+DUBC_W= 0.0
+#ROUGHNESS (FOR IC OR WALL_LAW)
+LBC_DZ0= 0.005 #0.00001
+DSPL_H= 0.0
+WALL_C= 0.5
+#IBM DFA
+TRIINTERFACE= '../surfaces/wavy_hill/wavy_hill.dat'
+LPS= T
+PHI_ROT= 0
+IT_LPS= 3
+NITER_F= 1
+#DRS MODEL (check specific parameters)
+DRSM= F
+
+#################################################################
+#OUTPUT
+VERBOSE= F 
+PROFILE= T
+#STD OUTPUT
+WBASE= 1000 #1000 # frequency for average ustar, mean vertical profiles, etc.
+C_CNT1= 1800000 #100000000 #100000 # frequency for instantaneous field
+C_CNT2= 25 #100000000 #100000 # instantaneous slice frequency (1 xz-, 3 yz-, 6 xy-slices per process)
+P_CNT3= 30000 #50000 #100000  #ta1 field
+C_CNT3= 30000 #100 #1000 # ta1 sampling frequency
+HAVG_CNT3= F # 'T': save only horizontal averages of ta1 field / 'F': save whole 3D ta1 field 
+C_CNT4= 20000 #500000 # frequency for field for input for another simulation
+inlet_count= 50000000
+C_CNT5= 25 # frequency for imitating eddy covariance sampling in the center of the domain
+Z_EDDY_COV= 2.0 # height (m) of eddy covariance sampling. If Z_EDDY_COV > L_Z, the eddy covariance output is omitted.
+
+#SCALAR1
+SC1_INIT= 288.919 # initial temperature (non-dimensional) at the second lowest grid point level, 1.0 corresponds to the value of T_SCALE in PARAM.f90
+DSC1DZ_INIT= 0.001408 # slope for initial vertical profile (1/m), only used if VI1= T
+SC1STAR_INIT= 0.00000 #0.00016 # temperature scale (dimensionless) for initial log profile, only used if VI1= F and VI2= T
+NF_SC1= 0.01 # noise factor
+Z_TURB_SC1= 100.0 # parameter controlling where noise is added
+Z_ENT_SC1= 100.0 # initial height (m) of entrainment layer, only relevant if smaller than height of domain
+ENT_SC1_INIT= 0.0 # temperature (non-dimensional) that is initially added at the height of the entrainment layer
+ENT_DSC1DZ_INIT= 0.00001 # slope for initially adding a linear function within the entrainment layer
+LLBC_SC1= 'DRC' # type of lower boundary condition
+LUBC_SC1= 'NEU'
+DLBC_SC1= 1.0   # value of lower boundary condition
+DUBC_SC1= 0.0000 #0.1223 #0.0504
+#SCALAR2
+SC2_INIT= 0.00261312855682389 #0.0006421356723696423 # initial specific humidity (kg/kg)
+DSC2DZ_INIT= -0.000057 #0.0 # slope for initial vertical profile, only used if VI1= T
+SC2STAR_INIT= -0.0000059 # humidity scale (kg/kg) for initial log profile, only used if VI1= F and VI2= T
+NF_SC2= 0.001
+Z_TURB_SC2= 100.0
+Z_ENT_SC2= 100.0
+ENT_SC2_INIT= 0.0
+ENT_DSC2DZ_INIT= -0.0000001
+LLBC_SC2= 'DRC'
+LUBC_SC2= 'NEU'
+DLBC_SC2= 0.00261312855682389 #1605339180924
+DUBC_SC2= -0.0036
+################################################################
+#LSM
+LSM= F
+NP_MAX= 120000 # Maximum number of particles 
+LSM_FREQ= 4 # Update frequency of the LSM model - time advancement 
+AVERAGE_FREQ= 1000 # equal or smaller than LSM_INIT - time averaging of the LES field needed for LSM SGS dissipation
+PRINT1_FREQ= 12500 #25000 # output of particle data every LSM steps - i.e every PRINT1_FREQ*LSM_FREQ "LES" timesteps
+LSM_INIT= 250000 #500000 # when the LSM algo is started - !!! NOTE - AVERAGE_FREQ < LSM_INIT !!!
+P_RHO= 918.4 # Density of particles in [kg/m3]
+D_M= 0.0002 # mean diameter [m]
+D_S= 0.0001 # std. deviation of particles [m]
+D_MIN= 0.00003 # bounds for min and max diameter 
+D_MAX= 0.001
+PPP_MIN= 7000 # particles per parcel minimum
+PPP_MAX= 70000 # particles per parcel maximum
+B_ENE= 1.E-10 # cohesion energy ( NOT needed for hot particles)
+R_DEP= F # read initial distribution pattern for particles - mostly not needed
+FILE_DEP= '' # path for the file for the initial distribution of particles
+INIT_DEP= 10000.0 # kg/m2
+MODE= "saltation" # possible: 'snowfall' / 'saltation' / 'point_release' / 'line_release'
+OUTLET= F # 'F': periodic bc for particles / 'T' : particles disappear at the boundary
+PARTICLE_TYPE= "inertial" # possibility: 'passive' / 'inertial' : drag force + gravity / 'settling' : superimposed w velocity 
+SETTLING_VEL= 0.0 # set the settling velocity
+molec_weight_water= 0.018015 # molecular weight of water [M mol^{-1}]
+R_universal= 8.314 # universal gas constant [J mol{-1} K{-1}]
+surface_tension= 0.0728 # surface tension between water and air interface
+water_rho= 918.4 # density of water
+c_p_a= 1005.4671 # specific heat at constant pressure for air
+c_L= 2035.68566 # specific heat capacity for ice ( taken at -10 C )
+c_p_v= 1854.2224 # specific heat capacity for vapor
+sublimation= T
+Schiller= T
+Mason= F
+thorpe_mason= F
+lp_conc= T
+lp_flux= T
+lp_stress= T
+lp_diss= F
+lp_massbal= T
+lp_restart= F
+lp_mombal= T
+#################################################################
+# WIND FARM
+num_of_rows= 4
+num_of_columns= 4
+spacing_x= 24
+spacing_y= 16
+wind_farm= F
+Ct= 1.3333333
+Cp= 0.80000
+local_tip_speed_ratio= 8.00000
+wt_averaging_time= 1.00000
+staggered= F
+start_disk= 3000
+wind_farm_debug= F
