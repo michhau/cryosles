@@ -25,7 +25,8 @@ IMPLICIT NONE
 !--mpi stuff
 #IF(MPI)
   logical,parameter :: USE_MPI = .true.
-  integer,parameter :: nproc = 128
+  ! 32^3 SGS-comparison grid: two vertical cells on each of 16 MPI ranks.
+  integer,parameter :: nproc = 16
 #ELSE
   logical,parameter :: USE_MPI = .false.
   integer,parameter :: nproc = 1  !--this must be 1 if no MPI
@@ -92,12 +93,12 @@ REAL(RPREC),PARAMETER :: NU_MOLEC = 1.24036021044E-5
 !######################################################################
 !GEOMETRY AND SPATIAL DISCRETIZATION
 REAL(RPREC) :: L_X,L_Y,L_Z,L_eta
-!INTEGER,PARAMETER ::  NX=64,NY=64,NZ_TOT=129
-INTEGER,PARAMETER :: NX=128,NY=128,NZ_TOT=129 !129 ! If SPONGE_TYPE = 1, then NZ_TOT-1 should be multiple of 4
+INTEGER,PARAMETER :: NX=32,NY=32,NZ_TOT=33
+!INTEGER,PARAMETER :: NX=128,NY=128,NZ_TOT=129 ! If SPONGE_TYPE = 1, then NZ_TOT-1 should be multiple of 4
 !INTEGER,PARAMETER ::  NX=256,NY=256,NZ_TOT=2049
 
 INTEGER            ::  NZ
-INTEGER,DIMENSION(0:nproc-1),PARAMETER :: NZ_VECTOR = 1 + SPREAD(1,1,128) !1 + (/1,2,9,SPREAD(36,1,5)/) !1 + (/1,2,18,SPREAD(19,1,9)/) !1 + SPREAD(16,1,12)
+INTEGER,DIMENSION(0:nproc-1),PARAMETER :: NZ_VECTOR = 1 + SPREAD(2,1,16)
 INTEGER,DIMENSION(0:nproc-1)           :: NZ_CUMUL, ETA_DISPL
 INTEGER,PARAMETER :: NZ_MAX = MAXVAL(NZ_VECTOR)
 

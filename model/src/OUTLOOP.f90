@@ -149,20 +149,19 @@ ENDIF
       id1=id1+1
    endif
 
-   !slices
-   write(opath,'(a)') trim(out_path)//'ts1_slices/'
+   !vertical centreline, written by inst_slice
+   write(opath,'(a)') trim(out_path)//'ts1_centerline/'
    if((coord==0).and.(jt==1))then
-      print*,'Creating folder for ts1_slices...'
+      print*,'Creating folder for ts1_centerline...'
       result=system('mkdir '//trim(opath))
    endif
    if(jt==1) call mpi_barrier(comm,ierr)
    if(mod(jt,c_cnt2)==0)then
-      if(coord==0) print*,'writing ts1_slice...'
+      if(coord==0) print*,'writing ts1_centerline...'
       call inst_slice(u,'u',c_cnt2,opath,id2)
       call inst_slice(v,'v',c_cnt2,opath,id2)
       call inst_slice(w,'w',c_cnt2,opath,id2)
       if(TEMPERATURE) call inst_slice(sc1,'t',c_cnt2,opath,id2)
-      if(TEMPERATURE) call inst_slice(tzsc1,'ttz',c_cnt2,opath,id2)
       if(HUMIDITY) call inst_slice(sc2,'q',c_cnt2,opath,id2)
       !if(HUMIDITY) call inst_slice(sc3,'q_part',c_cnt2,opath,id2)
 
