@@ -1,0 +1,2 @@
+case=dynamic
+nsteps=800000

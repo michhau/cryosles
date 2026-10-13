@@ -1,0 +1,2 @@
+case=static
+nsteps=800000

@@ -1,0 +1,2 @@
+case=lagrangian_scale_dependent
+nsteps=800000

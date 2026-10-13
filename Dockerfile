@@ -1,4 +1,4 @@
-FROM ubuntu:24.10
+FROM ubuntu:26.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV CRYOSHOME="/home/cryosles"
@@ -22,7 +22,8 @@ COPY ./model /home/copied_stuff
 #install Intel stuff
 RUN mkdir -p $CRYOSHOME
 WORKDIR /home/copied_stuff
-RUN sh ./intel/intel-oneapi-hpc-toolkit-2025.0.1.47_offline.sh -a --silent --cli --eula accept && sh ./intel/intel-oneapi-base-toolkit-2025.0.1.46_offline.sh -a --silent --cli --eula accept && rm -r /home/copied_stuff/intel/
+#RUN sh ./intel/intel-oneapi-hpc-toolkit-2026.1.1.33_offline.sh -a --silent --cli --eula accept && 
+RUN sh ./intel/intel-oneapi-toolkit-2026.1.1.33_offline.sh -a --silent --cli --eula accept && rm -r /home/copied_stuff/intel/
 #RUN . /opt/intel/oneapi/setvars.sh
 
 #build model

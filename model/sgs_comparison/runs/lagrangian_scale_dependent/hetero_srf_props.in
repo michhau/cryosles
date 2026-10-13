@@ -1,0 +1,16 @@
+Input file containing homogeneous surface properties for the SGS comparison
+(used in combination with patches_homogeneous_32.in)
+DO NOT add or remove lines. Keep the spaces like NAME= $Value
+author: CryosLES SGS comparison
+
+#--------------------------------------------------
+#Surface type '0'
+MODE_0= 1
+T_0= 293.15
+Z0_0= 0.01
+
+#--------------------------------------------------
+#Surface type '1' (identical values retained for a uniform surface)
+MODE_1= 1
+T_1= 293.15
+Z0_1= 0.01
